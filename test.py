@@ -11,6 +11,15 @@ import subprocess
 from imageio_ffmpeg import get_ffmpeg_exe
 import re
 
+import whisper
+model = whisper.load_model('base.en')
+
+whisper.DecodingOptions(language='en', fp16=False)
+
+result = model.transcribe('WIN_20250713_16_51_56_Pro.mp4')
+
+print(result['segments'])
+
 ffmpeg_path = get_ffmpeg_exe()
 def get_video_duration(file_path):
     ffmpeg_path = get_ffmpeg_exe()
