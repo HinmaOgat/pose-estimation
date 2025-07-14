@@ -12,13 +12,28 @@ from imageio_ffmpeg import get_ffmpeg_exe
 import re
 
 import whisper
+
+video = 'WIN_20250714_11_46_50_Pro.mp4'
+
 model = whisper.load_model('base.en')
 
 whisper.DecodingOptions(language='en', fp16=False)
 
-result = model.transcribe('WIN_20250713_16_51_56_Pro.mp4')
+result = model.transcribe(video)
 
-print(result['segments'])
+speech = []
+
+segmentedResult = result['segments']
+
+for segment in segmentedResult:
+    if segment == '':
+        pass
+    else:
+        speech.append(segment['text'])
+    print(speech)
+
+speech = '\n'.join(speech)
+print(speech)
 
 ffmpeg_path = get_ffmpeg_exe()
 def get_video_duration(file_path):
@@ -43,7 +58,7 @@ start_time = time.time()
 
 model = YOLO('yolov8n-pose')
 
-results = model(source="WIN_20250713_14_26_59_Pro - Copy.mp4",show=True,conf=0.3,save=True)
+results = model(source=video,show=True,conf=0.3,save=True)
 
 width = results[0].orig_shape[1]
 
@@ -122,7 +137,7 @@ right_wrist_coords = np.column_stack((np.arange(1, len(right_wrist_coords) + 1),
 StomachHeights = np.column_stack((np.arange(1, len(StomachHeights) + 1),StomachHeights))
 StomachHeights = LineString(StomachHeights)
 totalFrames = len(results)
-fps = totalFrames/(get_video_duration(r'C:\Users\Chinmay Gogate\ProgrammingCourse\yolotest2\pose-estimation\WIN_20250713_14_26_59_Pro - Copy.mp4')) #CALCULATE
+fps = totalFrames/(get_video_duration(rf'C:\Users\Chinmay Gogate\ProgrammingCourse\yolotest2\pose-estimation\{video}')) #CALCULATE
 print(f'fps: {fps}')
 threesecondframes = fps*3
 
@@ -131,6 +146,13 @@ intersection_left = first_line_left.intersection(StomachHeights)
 
 first_line_right = LineString(right_wrist_coords)
 intersection_right = first_line_right.intersection(StomachHeights)
+
+print(intersection_left)
+
+print(intersection_right)
+
+left_stomach_intersections = []
+right_stomach_intersections = []
 
 if intersection_left.geom_type == 'MultiPoint':
     plt.plot(*LineString(intersection_left.geoms).xy, 'o')
@@ -141,7 +163,7 @@ elif intersection_left.geom_type == 'Point':
 
 if intersection_right.geom_type == 'MultiPoint':
     plt.plot(*LineString(intersection_right.geoms).xy, 'o')
-    left_stomach_intersections = sorted(((LineString(intersection_left.geoms).xy)[0]).tolist())
+    right_stomach_intersections = sorted(((LineString(intersection_right.geoms).xy)[0]).tolist())
 elif intersection_right.geom_type == 'Point':
     plt.plot(*intersection_right.xy, 'o')
     right_stomach_intersections = [intersection_right.xy[0].tolist()[0]]
@@ -205,6 +227,14 @@ pdf.add_page()
 pdf.set_font(family='Arial',style='B',size=title)
 
 pdf.multi_cell(txt='Your presentation',w=0,h=50)
+
+pdf.set_font(family='Arial',style='B',size=h1)
+
+pdf.multi_cell(txt='Speech',w=0,h=40)
+
+pdf.set_font(family='Arial',style='B',size=p)
+
+pdf.multi_cell(txt=f'{speech}',w=0,h=40)
 
 pdf.set_font(family='Arial',style='B',size=h1)
 

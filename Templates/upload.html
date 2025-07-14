@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html style="font-family: Arial, Helvetica, sans-serif">
+<head title="Login page">
+    <style>
+
+    .menubar{
+            height:auto;
+            width: 100%;
+            margin:auto;
+            text-align:center;
+            color: white;
+            background-color:darkgrey;
+            border-bottom: 3px solid orange
+            /*background-image: linear-gradient(#4b0082,#00008b)*/
+        }
+        
+        .footer{
+            left:0;
+            bottom:0;
+            width:100%;
+            background-color: orangered;
+            text-align:center;
+            height:30px;
+            position: relative;
+        }
+        .menubar button {
+            float: right;
+            color: #f2f2f2;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+            font-size: 17px;
+        }
+
+        .loginWindow{
+            min-height:200px;
+            width: 30%;
+            margin:auto;
+            text-align:center;
+            display:inline-block;
+            background-color:lightgray;
+            border-bottom: 2px solid lime;
+            border-radius: 10px;
+        }
+
+        body{
+            background-image: whitesmoke;
+        }
+        
+        .inputField{
+            height:25px;
+            width:90%;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            background-color: transparent;
+            color:black;
+            text-align: center;
+        }
+        .inputField:focus{
+            background-color: transparent; /* or any other color you want when user starts typing in input */
+            border-top: none;
+            border-bottom:1px solid black;
+            border-left: none;
+            border-right: none;
+        }
+
+        .notify{
+            text-align:center;
+            padding:0.1px;
+            position:fixed;
+            width:40%;
+            left:30%;
+        }
+
+        .closebtn {
+            margin-left: 15px;
+            color: white;
+            font-weight: bold;
+            float: right;
+            font-size: 22px;
+            line-height: 20px;
+            cursor: pointer;
+        }
+
+        button{
+            width:90%;
+            padding:5px;
+            margin:5px;
+            margin-top:5px;
+            margin-bottom:10px;
+        }
+
+        input{
+            width:90%;
+            padding:5px;
+            margin:5px;
+            margin-top:10px;
+        }
+
+        input:-webkit-autofill {
+        -webkit-box-shadow:0 0 0 50px whitesmoke inset;
+    }
+
+    input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 50px whitesmoke inset;
+    }
+    </style>
+</head>
+<body><!--
+    <div class="menubar">
+        <table style="width:100%;">
+            <tr class="headerTable">
+            <td width="20%" class="headerTable">
+                <img src="{{url_for('static', filename='gclogo-removebg-preview.png')}}" alt="Gungahlin College Logo" width="150px" style="margin-right:100px;">
+            </td>
+            <td width="60%" class="headerTable">
+                <h1 style="text-align: center; display: inline">Login</h1>
+            <td width="30%" class="headerTable">
+            </td>
+        </tr>
+        </table>
+    </div>
+    {% if notification %}
+    <p></p>
+    <div class="notify" style="background-color: {{notification[1]}}; margin-top: 1px transparent">
+        <span class="closebtn" onclick="this.parentElement.style.display='none'">&times;</span>
+        <p>{{ notification[0] }}</p>
+    </div>
+    {% endif %}-->
+    <div style="height: 518px; display:flex">
+        <div class="loginWindow">
+            <h2 style="color:black;">Submit</h2>
+            <form method="post">
+            <input type="file" name="presentation" class="inputField" accept="video/*"><br>
+            <input type="submit" value="Submit">
+            </form>
+        </div>
+    </div>
+</body>
+</html>
