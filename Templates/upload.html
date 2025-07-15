@@ -106,34 +106,21 @@
         -webkit-box-shadow: 0 0 0 50px whitesmoke inset;
     }
     </style>
+    <script>
+        function switchToCancel(){
+            document.getElementById('submitFile').style.display = 'none'
+            document.getElementById('cancel').style.display = 'inline'
+        }
+    </script>
 </head>
-<body><!--
-    <div class="menubar">
-        <table style="width:100%;">
-            <tr class="headerTable">
-            <td width="20%" class="headerTable">
-                <img src="{{url_for('static', filename='gclogo-removebg-preview.png')}}" alt="Gungahlin College Logo" width="150px" style="margin-right:100px;">
-            </td>
-            <td width="60%" class="headerTable">
-                <h1 style="text-align: center; display: inline">Login</h1>
-            <td width="30%" class="headerTable">
-            </td>
-        </tr>
-        </table>
-    </div>
-    {% if notification %}
-    <p></p>
-    <div class="notify" style="background-color: {{notification[1]}}; margin-top: 1px transparent">
-        <span class="closebtn" onclick="this.parentElement.style.display='none'">&times;</span>
-        <p>{{ notification[0] }}</p>
-    </div>
-    {% endif %}-->
+<body>
     <div style="height: 518px; display:flex">
         <div class="loginWindow">
             <h2 style="color:black;">Submit</h2>
-            <form method="post">
-            <input type="file" name="presentation" class="inputField" accept="video/*"><br>
-            <input type="submit" value="Submit">
+            <form method="post" enctype=multipart/form-data>
+            <input type=file name=file class="inputField" accept="video/*"><br>
+            <input type="submit" value="Submit" id="submitFile" onclick="switchToCancel()">
+            <input type="submit" value="Cancel" id="cancel">
             </form>
         </div>
     </div>

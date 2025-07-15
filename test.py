@@ -13,7 +13,7 @@ import re
 
 import whisper
 
-video = 'WIN_20250714_11_46_50_Pro.mp4'
+video = 'userVideo/WIN_20250714_11_34_01_Pro.mp4'
 
 model = whisper.load_model('base.en')
 
@@ -286,7 +286,7 @@ if len(right_hand_gestures_over_limit) > 0:
 else:
     pdf.multi_cell(txt=f'No right hand gestures exceeded the three second recommendation',w=0,h=multicellHeight)
 
-pdf.output('output.pdf')
+pdf.output('output.pdf','d')
 
 '''c = canvas.Canvas("presentation-report.pdf",pagesize=A4)
 width, height = A4
