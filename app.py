@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, make_respo
 from werkzeug.utils import secure_filename
 import os
 from ultralytics import YOLO
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import time
@@ -49,6 +51,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 @app.route('/upload', methods=['GET','POST'])
 def upload():
     if request.method == 'POST':
+        print('Hi')
         references = [[None]]
         if 'file' not in request.files:
             return redirect(url_for('upload'))
@@ -155,6 +158,7 @@ def upload():
 
         spaceUtilized = f"{int(round((max_x - min_x)/width * 100,0))}%"
 
+        plt.clf()
         plt.plot(left_wrist_coords, label='Left wrist height')
         plt.plot(right_wrist_coords, label='Right wrist height')
         plt.plot(StomachHeights, label='Stomach heights')
@@ -324,7 +328,7 @@ def upload():
 
         pdf.multi_cell(txt='Graph',w=0,h=multicellHeight)
 
-        pdf.image('plot.png',w=400,h=300)
+        pdf.image('plot.png',w=280,h=210)
 
         pdf.set_font(family='Arial',style='B',size=h2)
 
@@ -352,7 +356,7 @@ def upload():
 
         response = make_response(pdf.output(dest='S').encode('latin-1'))
         response.headers.set('Content-Type', 'application/pdf')
-        response.headers.set('Content-Disposition', 'attachment', filename=f'presentation-report-{datetime.datetime.now().strftime("%H%M%S")}.pdf')
+        response.headers.set('Content-Disposition', 'inline', filename=f'presentation-report-{datetime.datetime.now().strftime("%H%M%S")}.pdf')
         print("Process finished --- %s seconds ---" % (time.time() - start_time))
         return response
     return render_template('upload.html')
