@@ -7,16 +7,15 @@ import numpy as np
 import time
 import cv2
 from fpdf import FPDF
-#from reportlab.pdfgen import canvas
 from shapely.geometry import LineString
 from imageio_ffmpeg import get_ffmpeg_exe
 import subprocess
 from imageio_ffmpeg import get_ffmpeg_exe
 import re
-
 import whisper
-
 import evaluate
+import string
+import datetime
 
 UPLOAD_FOLDER = './userVideo'
 ALLOWED_EXTENSIONS = {'mp4'}
@@ -50,32 +49,29 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 @app.route('/upload', methods=['GET','POST'])
 def upload():
     if request.method == 'POST':
-        print(request.files)
+        references = [[None]]
         if 'file' not in request.files:
             return redirect(url_for('upload'))
         file = request.files['file']
         if file.filename == '':
             return redirect(url_for('upload'))
-        print(file.filename)
-        print(request.form)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         if 'scriptFile' in request.files:
+            print(f'request.files: {request.files}')
             scriptFile = request.files['scriptFile']
+            print(scriptFile)
             if scriptFile.filename == '':
-                return redirect(url_for('upload'))
-            print(scriptFile.filename)
-            print(request.form)
-            if scriptFile:
-                scriptFilename = secure_filename(scriptFile.filename)
-                scriptFile.save(os.path.join(app.config['UPLOAD_FOLDER'], scriptFilename))
+                references = [[None]]
+            else:
+                if scriptFile:
+                    scriptFilename = secure_filename(scriptFile.filename)
+                    scriptFile.save(os.path.join(app.config['UPLOAD_FOLDER'], scriptFilename))
+                    scriptFile = f'userVideo/{scriptFile.filename}'
+                    with open(scriptFile, 'r',encoding='utf-8') as f:
+                        references = [[f.read()]]
         video = f'userVideo/{file.filename}'
-        scriptFile = f'userVideo/{scriptFile.filename}'
-        print(scriptFile)
-        with open(scriptFile, 'r',encoding='utf-8') as f:
-            references = [[f.read()]]
-        print(references)
         import cv2
         left_wrist_coords = []
         right_wrist_coords = []
@@ -104,7 +100,6 @@ def upload():
                     result = model(frame, show=False, conf=0.3, save=True)[0]
                     print(frame_number)
                     width = result.orig_shape[1]
-                    #try:
                     xyxyboxes = result.boxes.xyxy.tolist()
 
                     heights = []
@@ -177,7 +172,7 @@ def upload():
         right_wrist_coords = np.column_stack((np.arange(1, len(right_wrist_coords) + 1),right_wrist_coords))
         StomachHeights = np.column_stack((np.arange(1, len(StomachHeights) + 1),StomachHeights))
         StomachHeights = LineString(StomachHeights)
-        fps = totalFrames/(get_video_duration(rf'C:\Users\Chinmay Gogate\ProgrammingCourse\yolotest2\pose-estimation\{video}')) #CALCULATE
+        fps = totalFrames/(get_video_duration(rf'C:\Users\Chinmay Gogate\ProgrammingCourse\yolotest2\pose-estimation\{video}')) 
         print(f'fps: {fps}')
         threesecondframes = fps*3
 
@@ -254,46 +249,6 @@ def upload():
         print(f'left hand: {left_hand_gestures_over_limit}')
         print(f'right hand: {right_hand_gestures_over_limit}')
 
-        #video = r'userVideo\WIN_20250714_11_46_50_Pro.mp4'
-        model = whisper.load_model('base.en')
-
-        whisper.DecodingOptions(language='en', fp16=False)
-
-        result = model.transcribe(video)
-
-        textSpeech = result['text']
-
-        segmentedSpeech = []
-
-        segmentedResult = []
-
-        for segment in segmentedResult:
-            if segment == '':
-                pass
-            else:
-                segmentedSpeech.append(segment['text'])
-            print(segmentedSpeech)
-
-        segmentedSpeech = '\n'.join(segmentedSpeech)
-        print(segmentedSpeech)
-
-        ffmpeg_path = get_ffmpeg_exe()
-
-        sacrebleu = evaluate.load('sacrebleu')
-
-        predictions = [textSpeech]
-
-        references = [['In this presentation, I am going to be focussing on the impact of climate change on the Great Barrier Reef, and ways that we as humans can mitigate this risk from a chemistry perspective']]
-
-        results = sacrebleu.compute(predictions=predictions, references=references)
-
-        print(results)
-        print(textSpeech)
-
-        score = results['score']
-
-        print(score)
-
         title = 25
         h1 = 20
         h2 = 15
@@ -308,15 +263,42 @@ def upload():
 
         pdf.multi_cell(txt='Your presentation',w=0,h=50)
 
-        pdf.set_font(family='Arial',style='B',size=h1)
+        if references[0][0] != None:
+            references[0][0] = references[0][0].lower()
+            references[0][0] = references[0][0].translate(str.maketrans('','',string.punctuation))
+            model = whisper.load_model('base.en')
+            whisper.DecodingOptions(language='en', fp16=False)
+            result = model.transcribe(video)
+            textSpeech = result['text']
+            #segmentedSpeech = []
+            #segmentedResult = result['text']
+            '''for segment in segmentedResult:
+                if segment == '':
+                    pass
+                else:
+                    segmentedSpeech.append(segment['text'])
+                print(segmentedSpeech)'''
+            #segmentedSpeech = '\n'.join(segmentedSpeech)
+            textSpeech = textSpeech.lower()
+            textSpeech = textSpeech.translate(str.maketrans('','',string.punctuation))
+            print(textSpeech)
+            ffmpeg_path = get_ffmpeg_exe()
+            sacrebleu = evaluate.load('sacrebleu')
+            predictions = [textSpeech]
+            results = sacrebleu.compute(predictions=predictions, references=references)
+            print(results)
+            print(textSpeech)
+            score = results['score']
 
-        pdf.multi_cell(txt='Speech',w=0,h=40)
+            pdf.set_font(family='Arial',style='B',size=h1)
 
-        pdf.set_font(family='Arial',style='B',size=p)
+            pdf.multi_cell(txt='Speech',w=0,h=40)
 
-        pdf.multi_cell(txt=f'{segmentedSpeech}',w=0,h=40)
+            pdf.set_font(family='Arial',style='B',size=p)
 
-        pdf.multi_cell(txt=f'Clarity: {round(score, 2)}%',w=0,h=40)
+            pdf.multi_cell(txt=f'{textSpeech}',w=0,h=40)
+
+            pdf.multi_cell(txt=f'Clarity: {round(score, 2)}%',w=0,h=40)
 
         pdf.set_font(family='Arial',style='B',size=h1)
 
@@ -368,10 +350,9 @@ def upload():
         else:
             pdf.multi_cell(txt=f'No right hand gestures exceeded the three second recommendation',w=0,h=multicellHeight)
 
-        #pdf.output('trial.pdf','f')
         response = make_response(pdf.output(dest='S').encode('latin-1'))
         response.headers.set('Content-Type', 'application/pdf')
-        response.headers.set('Content-Disposition', 'attachment', filename=f'presentation-report.pdf')
+        response.headers.set('Content-Disposition', 'attachment', filename=f'presentation-report-{datetime.datetime.now().strftime("%H%M%S")}.pdf')
         print("Process finished --- %s seconds ---" % (time.time() - start_time))
         return response
     return render_template('upload.html')

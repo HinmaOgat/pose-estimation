@@ -49,13 +49,13 @@
         
         .inputField{
             height:25px;
-            width:90%;
             border-top: none;
             border-left: none;
             border-right: none;
             background-color: transparent;
             color:black;
             text-align: center;
+            margin: auto;
         }
         .inputField:focus{
             background-color: transparent; /* or any other color you want when user starts typing in input */
@@ -118,9 +118,9 @@
         <div class="loginWindow">
             <h2 style="color:black;">Submit</h2>
             <form method="post" enctype=multipart/form-data>
-            <input type=file name="scriptFile" class="inputField"><br>
-            <input type=file name=file class="inputField" accept="video/*"><br>
-            <input type="submit" value="Submit" id="submitFile" onclick="switchToCancel()">
+            <label for="fileInput">Script file:</label><input type=file name="scriptFile" class="inputField" id="fileInput"><br>
+            <label for="scriptFileInput">Presentation recording file:</label><input type=file name=file class="inputField" accept="video/*" id="scriptFileInput"><br>
+            <input type="submit" value="Submit" id="submitFile">
             <input type="submit" value="Cancel" id="cancel">
             </form>
         </div>
