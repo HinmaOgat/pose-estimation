@@ -44,6 +44,15 @@ def get_video_duration(file_path):
     duration = hours * 3600 + minutes * 60 + seconds
     return duration
 
+def section(x_coord,sectionNo):
+    for n in range(sectionNo):
+        if n == 0:
+            if x_coord >= 0 and x_coord <= (1280/sectionNo)*(n+1):
+                return 1
+        else:
+            if x_coord > (1280/sectionNo)*n and x_coord <= (1280/sectionNo)*(n+1):
+                return n+1
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -82,8 +91,12 @@ def upload():
         min_x = 100000000000000000000000
         StomachHeights = []
         aboveStomachlevel = []
+        x_positions = []
+        sections = []
+        sectionNo = 5
         addLeftIntersectionAtBeginning = False
         addRightIntersectionAtBeginning = False
+        frame_interval = 20
 
         start_time = time.time()
 
@@ -99,8 +112,8 @@ def upload():
             if not ret:
                 break
             try:
-                if frame_number % 2 == 0:
-                    result = model(frame, show=False, conf=0.3, save=True)[0]
+                if frame_number % frame_interval == 0:
+                    result = model(frame, show=True, conf=0.3, save=True)[0]
                     print(frame_number)
                     width = result.orig_shape[1]
                     xyxyboxes = result.boxes.xyxy.tolist()
@@ -133,6 +146,10 @@ def upload():
                     left_wrist_coords.append((left_wrist*-1))
                     right_wrist = result_keypoint_coords[10][1]
                     right_wrist_coords.append((right_wrist*-1))
+                    print(result_keypoint_coords[0][0])
+                    x_positions.append(result_keypoint_coords[0][0])
+                    
+                    sections.append(section(result_keypoint_coords[0][0]*1280,sectionNo))
 
                     presenterStomachHeight = ((result_keypoint_coords[11][1]+result_keypoint_coords[5][1])/2+(result_keypoint_coords[12][1]+result_keypoint_coords[6][1])/2)/2
 
@@ -159,6 +176,26 @@ def upload():
         spaceUtilized = f"{int(round((max_x - min_x)/width * 100,0))}%"
 
         plt.clf()
+        plt.plot(x_positions)
+        plt.title('X-coordinate of nose of presenter per frame')
+        plt.ylabel('X-position')
+        plt.xlabel('Frame')
+        plt.legend()
+        plt.ylim(0,1)
+        plt.xticks(color='w')
+        plt.savefig(f"plot2.png")
+
+        plt.clf()
+        plt.plot(sections)
+        plt.title('Section of presenter per frame')
+        plt.ylabel('X-position')
+        plt.xlabel('Frame')
+        plt.legend()
+        plt.xticks(color='w')
+        plt.ylim(0,5)
+        plt.savefig(f"plot3.png")
+
+        plt.clf()
         plt.plot(left_wrist_coords, label='Left wrist height')
         plt.plot(right_wrist_coords, label='Right wrist height')
         plt.plot(StomachHeights, label='Stomach heights')
@@ -169,7 +206,7 @@ def upload():
         plt.legend()
         plt.yticks(color='w')
         xmin, xmax = plt.xlim()
-        plt.xticks(np.arange(0, xmax + 1, 5))
+        plt.xticks(np.arange(0, xmax + 1, frame_interval))
         plt.savefig(f"plot.png")
 
         left_wrist_coords = np.column_stack((np.arange(1, len(left_wrist_coords) + 1),left_wrist_coords))
@@ -312,13 +349,21 @@ def upload():
 
         pdf.multi_cell(txt=f'Space utilised: {spaceUtilized}',w=0,h=multicellHeight)
 
-        pdf.multi_cell(txt=f'Left-most position (at {round(min_frame/16.82,2)}s):',w=0,h=multicellHeight)
+        pdf.multi_cell(txt=f'Left-most position at {datetime.timedelta(seconds=round(min_frame/fps,0))} (hours:minutes:seconds)',w=0,h=multicellHeight)
 
         pdf.image('min_frame.jpg',w=160,h=90)
 
-        pdf.multi_cell(txt=f'Right-most position (at {round(max_frame/16.82,2)}s):',w=0,h=multicellHeight)
+        pdf.multi_cell(txt=f'Right-most position at {datetime.timedelta(seconds=round(max_frame/fps,0))} (hours:minutes:seconds)',w=0,h=multicellHeight)
 
         pdf.image('max_frame.jpg',w=160,h=90)
+
+        pdf.multi_cell(txt='Graph of nose positions',w=0,h=multicellHeight)
+
+        pdf.image('plot2.png',w=280,h=210)
+
+        pdf.multi_cell(txt='Graph of sections',w=0,h=multicellHeight)
+
+        pdf.image('plot3.png',w=280,h=210)
 
         pdf.set_font(family='Arial',style='B',size=h1)
 
@@ -326,7 +371,7 @@ def upload():
 
         pdf.set_font(family='Arial',style='B',size=h2)
 
-        pdf.multi_cell(txt='Graph',w=0,h=multicellHeight)
+        pdf.multi_cell(txt='Graph of wrist positions ',w=0,h=multicellHeight)
 
         pdf.image('plot.png',w=280,h=210)
 
