@@ -44,13 +44,22 @@ def get_video_duration(file_path):
     duration = hours * 3600 + minutes * 60 + seconds
     return duration
 
-def section(x_coord,sectionNo):
+def section_x(x_coord,sectionNo):
     for n in range(sectionNo):
         if n == 0:
             if x_coord >= 0 and x_coord <= (1280/sectionNo)*(n+1):
                 return 1
         else:
             if x_coord > (1280/sectionNo)*n and x_coord <= (1280/sectionNo)*(n+1):
+                return n+1
+
+def section_y(y_coord,sectionNo):
+    for n in range(sectionNo):
+        if n == 0:
+            if y_coord >= 0 and y_coord <= (720/sectionNo)*(n+1):
+                return 1
+        else:
+            if y_coord > (720/sectionNo)*n and y_coord <= (720/sectionNo)*(n+1):
                 return n+1
 
 app = Flask(__name__)
@@ -87,6 +96,8 @@ def upload():
         import cv2
         left_wrist_coords = []
         right_wrist_coords = []
+        left_wrist_sections = []
+        right_wrist_sections = []
         max_x = 0
         min_x = 100000000000000000000000
         StomachHeights = []
@@ -94,6 +105,7 @@ def upload():
         x_positions = []
         sections = []
         sectionNo = 5
+        wristSectionNo = 10
         addLeftIntersectionAtBeginning = False
         addRightIntersectionAtBeginning = False
         frame_interval = 20
@@ -144,12 +156,14 @@ def upload():
                     result_keypoint_coords = result.keypoints.xyn.tolist()[0]
                     left_wrist = result_keypoint_coords[9][1]
                     left_wrist_coords.append((left_wrist*-1))
+                    left_wrist_sections.append(section_y(left_wrist*720,wristSectionNo))
                     right_wrist = result_keypoint_coords[10][1]
                     right_wrist_coords.append((right_wrist*-1))
+                    right_wrist_sections.append(section_y(right_wrist*720,wristSectionNo))
                     print(result_keypoint_coords[0][0])
                     x_positions.append(result_keypoint_coords[0][0])
                     
-                    sections.append(section(result_keypoint_coords[0][0]*1280,sectionNo))
+                    sections.append(section_x(result_keypoint_coords[0][0]*1280,sectionNo))
 
                     presenterStomachHeight = ((result_keypoint_coords[11][1]+result_keypoint_coords[5][1])/2+(result_keypoint_coords[12][1]+result_keypoint_coords[6][1])/2)/2
 
@@ -208,6 +222,17 @@ def upload():
         xmin, xmax = plt.xlim()
         plt.xticks(np.arange(0, xmax + 1, frame_interval))
         plt.savefig(f"plot.png")
+
+        plt.clf()
+        plt.plot(left_wrist_sections,label='Left wrist section')
+        plt.plot(right_wrist_sections,label='Right wrist section')
+        plt.title('Section of presenter wrists per frame')
+        plt.ylabel('Y-position')
+        plt.xlabel('Frame')
+        plt.legend()
+        plt.xticks(color='w')
+        plt.ylim(0,10)
+        plt.savefig(f"plot4.png")
 
         left_wrist_coords = np.column_stack((np.arange(1, len(left_wrist_coords) + 1),left_wrist_coords))
         right_wrist_coords = np.column_stack((np.arange(1, len(right_wrist_coords) + 1),right_wrist_coords))
@@ -374,6 +399,10 @@ def upload():
         pdf.multi_cell(txt='Graph of wrist positions ',w=0,h=multicellHeight)
 
         pdf.image('plot.png',w=280,h=210)
+
+        pdf.multi_cell(txt='Graph of wrist sections',w=0,h=multicellHeight)
+
+        pdf.image('plot4.png',w=280,h=210)
 
         pdf.set_font(family='Arial',style='B',size=h2)
 
