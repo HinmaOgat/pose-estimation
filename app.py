@@ -18,6 +18,8 @@ import whisper
 import evaluate
 import string
 import datetime
+import sys
+
 
 UPLOAD_FOLDER = './userVideo'
 ALLOWED_EXTENSIONS = {'mp4'}
@@ -105,10 +107,12 @@ def upload():
         x_positions = []
         sections = []
         sectionNo = 5
-        wristSectionNo = 10
+        wristSectionNo = 5
         addLeftIntersectionAtBeginning = False
         addRightIntersectionAtBeginning = False
         frame_interval = 20
+        actual_left_wrist_coords = []
+        actual_right_wrist_coords = []
 
         start_time = time.time()
 
@@ -155,9 +159,11 @@ def upload():
 
                     result_keypoint_coords = result.keypoints.xyn.tolist()[0]
                     left_wrist = result_keypoint_coords[9][1]
+                    actual_left_wrist_coords.append((left_wrist))
                     left_wrist_coords.append((left_wrist*-1))
                     left_wrist_sections.append(section_y(left_wrist*720,wristSectionNo))
                     right_wrist = result_keypoint_coords[10][1]
+                    actual_right_wrist_coords.append(right_wrist)
                     right_wrist_coords.append((right_wrist*-1))
                     right_wrist_sections.append(section_y(right_wrist*720,wristSectionNo))
                     print(result_keypoint_coords[0][0])
@@ -208,8 +214,10 @@ def upload():
         plt.xticks(color='w')
         plt.ylim(0,5)
         plt.savefig(f"plot3.png")
-
+        
         plt.clf()
+        with open('loggingFile.txt','w') as file:
+            file.write(f"{right_wrist_coords}")
         plt.plot(left_wrist_coords, label='Left wrist height')
         plt.plot(right_wrist_coords, label='Right wrist height')
         plt.plot(StomachHeights, label='Stomach heights')
@@ -273,13 +281,13 @@ def upload():
             left_stomach_intersections.append(0)
 
         if len(left_stomach_intersections) % 2 != 0:
-            left_stomach_intersections.append(totalFrames)
+            left_stomach_intersections.append(totalFrames/fps)
 
         if addRightIntersectionAtBeginning == True:
             right_stomach_intersections.append(0)
 
         if len(right_stomach_intersections) % 2 != 0:
-            right_stomach_intersections.append(totalFrames)
+            right_stomach_intersections.append(totalFrames/fps)
 
         left_stomach_intersections = sorted(left_stomach_intersections)
         right_stomach_intersections = sorted(right_stomach_intersections)
@@ -311,6 +319,9 @@ def upload():
                 print(gesture_time)
                 if gesture_time >= threesecondframes:
                     right_hand_gestures_over_limit.append([gesture_start/fps,gesture_end/fps])
+
+        print(f'left hand gestures: {left_stomach_intersections}')
+        print(f'right hand gestures: {right_stomach_intersections}')
 
         print(f'left hand: {left_hand_gestures_over_limit}')
         print(f'right hand: {right_hand_gestures_over_limit}')
