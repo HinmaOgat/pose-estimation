@@ -110,7 +110,7 @@ def upload():
         wristSectionNo = 5
         addLeftIntersectionAtBeginning = False
         addRightIntersectionAtBeginning = False
-        frame_interval = 20
+        frame_interval = 10
         actual_left_wrist_coords = []
         actual_right_wrist_coords = []
 
@@ -129,6 +129,13 @@ def upload():
                 break
             try:
                 if frame_number % frame_interval == 0:
+                    height, width = frame.shape[:2]
+                    part_height = height // 9
+
+                    # Draw 7 horizontal lines to split into 8 parts
+                    for i in range(1, 9):
+                        y = i * part_height
+                        cv2.line(frame, (0, y), (width, y), (0, 255, 0), 2)
                     result = model(frame, show=True, conf=0.3, save=True)[0]
                     print(frame_number)
                     width = result.orig_shape[1]
@@ -338,7 +345,7 @@ def upload():
 
         pdf.set_font(family='Arial',style='B',size=title)
 
-        pdf.multi_cell(txt='Your presentation',w=0,h=50)
+        pdf.multi_cell(txt=f'Your presentation (total frames: {totalFrames}, fps:{fps})',w=0,h=50)
 
         if references[0][0] != None:
             references[0][0] = references[0][0].lower()
