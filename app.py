@@ -110,7 +110,7 @@ def upload():
         wristSectionNo = 5
         addLeftIntersectionAtBeginning = False
         addRightIntersectionAtBeginning = False
-        frame_interval = 10
+        frame_interval = 3
         actual_left_wrist_coords = []
         actual_right_wrist_coords = []
 
@@ -139,17 +139,16 @@ def upload():
                     result = model(frame, show=True, conf=0.3, save=True)[0]
                     print(frame_number)
                     width = result.orig_shape[1]
+
+                    #Confirm which human on the screen is a presenter
                     xyxyboxes = result.boxes.xyxy.tolist()
-
                     heights = []
-
                     for xyxybox in xyxyboxes:
                         heights.append(xyxybox[3]-xyxybox[1])
-
                     presenterIndex = heights.index(max(heights))
-
                     print(xyxyboxes[presenterIndex][0])
 
+                    #Note the maximum and minium horizontal positions of the user
                     if xyxyboxes[presenterIndex][0] < min_x:
                         min_x = xyxyboxes[presenterIndex][0]
                         min_frame = frame_number-1
@@ -162,8 +161,8 @@ def upload():
                         orig_img = result.orig_img
                         cv2.imwrite('max_frame.jpg', orig_img)
 
+                    #keypoints
                     result_keypoint_coords = result.keypoints.xyn.tolist()[presenterIndex]
-
                     result_keypoint_coords = result.keypoints.xyn.tolist()[0]
                     left_wrist = result_keypoint_coords[9][1]
                     actual_left_wrist_coords.append((left_wrist))
@@ -182,7 +181,7 @@ def upload():
 
                     StomachHeights.append(presenterStomachHeight*-1)
 
-                    if left_wrist < presenterStomachHeight or right_wrist < presenterStomachHeight:
+                    if left_wrist < presenterStomachHeight or right_wrist < presenterStomachHeight: #Remember that the software considers '0 height' to be the top of the screen. This basically says, if the user's hand starts out 
                         if frame_number-2 == 0:
                             if left_wrist < presenterStomachHeight:
                                 addLeftIntersectionAtBeginning = True
