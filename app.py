@@ -20,7 +20,6 @@ import string
 import datetime
 import sys
 
-
 UPLOAD_FOLDER = './userVideo'
 ALLOWED_EXTENSIONS = {'mp4'}
 
@@ -53,15 +52,6 @@ def section_x(x_coord,sectionNo):
                 return 1
         else:
             if x_coord > (1280/sectionNo)*n and x_coord <= (1280/sectionNo)*(n+1):
-                return n+1
-
-def section_y(y_coord,sectionNo):
-    for n in range(sectionNo):
-        if n == 0:
-            if y_coord >= 0 and y_coord <= (720/sectionNo)*(n+1):
-                return 1
-        else:
-            if y_coord > (720/sectionNo)*n and y_coord <= (720/sectionNo)*(n+1):
                 return n+1
 
 app = Flask(__name__)
@@ -98,21 +88,23 @@ def upload():
         import cv2
         left_wrist_coords = []
         right_wrist_coords = []
-        left_wrist_sections = []
-        right_wrist_sections = []
         max_x = 0
         min_x = 100000000000000000000000
         StomachHeights = []
-        aboveStomachlevel = []
+        kneeHeights = []
+        hipHeights = []
+        shoulderHeights = []
+        insideBox = []
+        rightSections = []
+        leftSections = []
         x_positions = []
         sections = []
         sectionNo = 5
-        wristSectionNo = 5
-        addLeftIntersectionAtBeginning = False
-        addRightIntersectionAtBeginning = False
-        frame_interval = 3
+        frame_interval = 5
         actual_left_wrist_coords = []
         actual_right_wrist_coords = []
+        min_frame = None
+        max_frame = None
 
         start_time = time.time()
 
@@ -130,12 +122,17 @@ def upload():
             try:
                 if frame_number % frame_interval == 0:
                     height, width = frame.shape[:2]
+                    print(f"HEIGHTTTTT: {height}")
                     part_height = height // 9
 
                     # Draw 7 horizontal lines to split into 8 parts
-                    for i in range(1, 9):
-                        y = i * part_height
-                        cv2.line(frame, (0, y), (width, y), (0, 255, 0), 2)
+                    #for i in range(1, 9):
+                    #    y = i * part_height
+                    #    print(y)
+                     #   cv2.line(frame, (0, y), (width, y), (0, 255, 0), 2)
+                    cv2.line(frame, (0, 406), (width, 406), (0, 255, 0), 2)
+                    cv2.line(frame, (0, 563), (width, 563), (0, 255, 0), 2)
+                    cv2.line(frame, (0, 138), (width, 138), (0, 255, 0), 2)
                     result = model(frame, show=True, conf=0.3, save=True)[0]
                     print(frame_number)
                     width = result.orig_shape[1]
@@ -164,32 +161,48 @@ def upload():
                     #keypoints
                     result_keypoint_coords = result.keypoints.xyn.tolist()[presenterIndex]
                     result_keypoint_coords = result.keypoints.xyn.tolist()[0]
-                    left_wrist = result_keypoint_coords[9][1]
+                    left_wrist = result_keypoint_coords[9][1]*-1
                     actual_left_wrist_coords.append((left_wrist))
-                    left_wrist_coords.append((left_wrist*-1))
-                    left_wrist_sections.append(section_y(left_wrist*720,wristSectionNo))
-                    right_wrist = result_keypoint_coords[10][1]
+                    left_wrist_coords.append((left_wrist))
+                    right_wrist = result_keypoint_coords[10][1]*-1
                     actual_right_wrist_coords.append(right_wrist)
-                    right_wrist_coords.append((right_wrist*-1))
-                    right_wrist_sections.append(section_y(right_wrist*720,wristSectionNo))
+                    right_wrist_coords.append((right_wrist))
                     print(result_keypoint_coords[0][0])
                     x_positions.append(result_keypoint_coords[0][0])
                     
                     sections.append(section_x(result_keypoint_coords[0][0]*1280,sectionNo))
 
-                    presenterStomachHeight = ((result_keypoint_coords[11][1]+result_keypoint_coords[5][1])/2+(result_keypoint_coords[12][1]+result_keypoint_coords[6][1])/2)/2
-
-                    StomachHeights.append(presenterStomachHeight*-1)
-
-                    if left_wrist < presenterStomachHeight or right_wrist < presenterStomachHeight: #Remember that the software considers '0 height' to be the top of the screen. This basically says, if the user's hand starts out 
-                        if frame_number-2 == 0:
-                            if left_wrist < presenterStomachHeight:
-                                addLeftIntersectionAtBeginning = True
-                            if right_wrist < presenterStomachHeight:
-                                addRightIntersectionAtBeginning = True
-                        aboveStomachlevel.append(1)
+                    presenterStomachHeight = ((result_keypoint_coords[11][1]+result_keypoint_coords[5][1])/2+(result_keypoint_coords[12][1]+result_keypoint_coords[6][1])/2)/2*-1+ 0.1
+                    
+                    presenterHipHeight = (result_keypoint_coords[11][1]+result_keypoint_coords[12][1])/2*-1 + 0.1
+                    print(f'Hip Height: {((result_keypoint_coords[11][1]+result_keypoint_coords[12][1])/2+0.1)*height}')
+                    hipHeights.append(presenterHipHeight)
+                    presenterKneeHeight = (result_keypoint_coords[13][1]+result_keypoint_coords[14][1])/2*-1 + 0.1
+                    print(f'Knee Height: {((result_keypoint_coords[13][1]+result_keypoint_coords[14][1])/2+0.1)*height}')
+                    kneeHeights.append(presenterKneeHeight)
+                    presenterShoulderHeight = (result_keypoint_coords[5][1]+result_keypoint_coords[5][1])/2*-1
+                    print(f'Shoulder height: {((result_keypoint_coords[5][1]+result_keypoint_coords[5][1])/2)*height}')
+                    shoulderHeights.append(presenterShoulderHeight)
+                    #rightSections.append([presenterKneeHeight,right_wrist,presenterHipHeight])
+                    if right_wrist > presenterKneeHeight and right_wrist < presenterHipHeight:
+                        rightSections.append(1)
+                    elif right_wrist > presenterHipHeight and right_wrist < presenterShoulderHeight:
+                        rightSections.append(2)
+                    elif right_wrist < presenterKneeHeight:
+                        rightSections.append(0)
                     else:
-                        aboveStomachlevel.append(0)
+                        rightSections.append(3)
+
+                    if left_wrist > presenterKneeHeight and left_wrist < presenterHipHeight:
+                        leftSections.append(1)
+                    elif left_wrist > presenterHipHeight and left_wrist < presenterShoulderHeight:
+                        leftSections.append(2)
+                    elif left_wrist < presenterKneeHeight:
+                        leftSections.append(0)
+                    else:
+                        leftSections.append(3)
+                    StomachHeights.append(presenterStomachHeight)
+
             except:
                 left_wrist_coords.append(0)
                 right_wrist_coords.append(0)
@@ -227,6 +240,11 @@ def upload():
         plt.plot(left_wrist_coords, label='Left wrist height')
         plt.plot(right_wrist_coords, label='Right wrist height')
         plt.plot(StomachHeights, label='Stomach heights')
+        print(f'stomach heights: {StomachHeights}')
+        print(kneeHeights)
+        plt.plot(kneeHeights, label='Knee heights')
+        plt.plot(hipHeights, label='Hip heights')
+        plt.plot(shoulderHeights, label='Shoulder heights')
         plt.title('Height of right and left wrist of presenter per frame (0 to 1)')
         plt.ylabel('Height (0 to 1)')
         plt.xlabel('Frame')
@@ -237,16 +255,171 @@ def upload():
         plt.xticks(np.arange(0, xmax + 1, frame_interval))
         plt.savefig(f"plot.png")
 
+        print(f'rightSections:{rightSections}')
+        print(f'leftSections:{leftSections}')
         plt.clf()
-        plt.plot(left_wrist_sections,label='Left wrist section')
-        plt.plot(right_wrist_sections,label='Right wrist section')
-        plt.title('Section of presenter wrists per frame')
-        plt.ylabel('Y-position')
-        plt.xlabel('Frame')
+        print(f"Sections of presenter's wrist")
+        plt.plot(list(range(1,len(rightSections)*frame_interval,frame_interval)),rightSections,label="Right hand")
+        plt.plot(list(range(1,len(leftSections)*frame_interval,frame_interval)),leftSections,label="Left hand")
         plt.legend()
-        plt.xticks(color='w')
-        plt.ylim(0,10)
-        plt.savefig(f"plot4.png")
+        plt.title('When inside rest area')
+        plt.savefig('plot2.png')
+
+        #----------------------------------------------------------------------------------
+
+        frame_interval = 5
+
+        for s in range(len(rightSections)):
+            if s == 0 or s == len(rightSections) - 1:
+                pass
+            else:
+                if rightSections[s - 1] == rightSections[s + 1] and rightSections[s] != rightSections[s - 1]:
+                    rightSections[s] = rightSections[s - 1]
+
+        for s in range(len(leftSections)):
+            if s == 0 or s == len(leftSections) - 1:
+                pass
+            else:
+                if leftSections[s - 1] == leftSections[s + 1] and leftSections[s] != leftSections[s - 1]:
+                    leftSections[s] = leftSections[s - 1]
+
+        plt.plot(rightSections)
+        plt.plot(leftSections)
+        plt.show()
+
+        xtime = np.arange(len(rightSections))
+
+        section_line = LineString(np.column_stack((xtime, rightSections)))
+
+        o_one_positive = np.column_stack((np.arange(0, len(rightSections) -1 ),np.full_like(np.arange(0, len(rightSections) -1 ), 1.05, dtype=np.float64)))
+        o_one_positive = LineString(o_one_positive)
+        o_one_negative = np.column_stack((np.arange(0, len(rightSections) -1 ),np.full_like(np.arange(0, len(rightSections) -1 ), 0.95, dtype=np.float64)))
+        o_one_negative = LineString(o_one_negative)
+
+        intersection_o_one_positive = section_line.intersection(o_one_positive)
+        intersection_o_one_negative = section_line.intersection(o_one_negative)
+
+        o_one_positive_intersections = []
+        if intersection_o_one_positive.geom_type == 'MultiPoint':
+            #plt.plot(*LineString(intersection_left.geoms).xy, 'o')
+            o_one_positive_intersections = sorted(((LineString(intersection_o_one_positive.geoms).xy)[0]).tolist())
+        elif intersection_o_one_positive.geom_type == 'Point':
+            #plt.plot(*intersection_left.xy, 'o')
+            o_one_positive_intersections = [intersection_o_one_positive.xy[0].tolist()[0]]
+
+        o_one_positive_intersections = sorted(o_one_positive_intersections)
+
+        #if len(o_one_positive_intersections) % 2 != 0:
+        #   o_one_positive_intersections.append(len(rightSections))
+
+        o_one_negative_intersections = []
+        if intersection_o_one_negative.geom_type == 'MultiPoint':
+            #plt.plot(*LineString(intersection_left.geoms).xy, 'o')
+            o_one_negative_intersections = sorted(((LineString(intersection_o_one_negative.geoms).xy)[0]).tolist())
+        elif intersection_o_one_negative.geom_type == 'Point':
+            #plt.plot(*intersection_left.xy, 'o') 
+            o_one_negative_intersections = [intersection_o_one_negative.xy[0].tolist()[0]]
+
+        o_one_negative_intersections = sorted(o_one_negative_intersections)
+
+        #if len(o_one_negative_intersections) % 2 != 0:
+        #    o_one_negative_intersections.append(len(rightSections))
+
+        for x in range(len(o_one_positive_intersections)):
+            o_one_positive_intersections[x] = o_one_positive_intersections[x]*frame_interval#*10# / 3
+        for x in range(len(o_one_negative_intersections)):
+            o_one_negative_intersections[x] = o_one_negative_intersections[x]*frame_interval#*10# / 3
+
+        if rightSections[0] > 1:
+            o_one_positive_intersections.insert(0,0)
+
+        if rightSections[0] < 1:
+            o_one_negative_intersections.insert(0,0)
+
+        if rightSections[-1] > 1:
+            o_one_positive_intersections.append(len(rightSections)*frame_interval)
+
+        if rightSections[-1] < 1:
+            o_one_negative_intersections.append(len(rightSections)*frame_interval)
+
+        for x in range(len(o_one_positive_intersections)):
+            o_one_positive_intersections[x] = o_one_positive_intersections[x] / 30
+
+        for x in range(len(o_one_negative_intersections)):
+            o_one_negative_intersections[x] = o_one_negative_intersections[x] / 30
+
+        print('For right hand:')
+        print(o_one_positive_intersections)
+        print(o_one_negative_intersections)
+
+        #
+
+        xtime = np.arange(len(leftSections))
+
+        section_line = LineString(np.column_stack((xtime, leftSections)))
+
+        o_one_positive = np.column_stack((np.arange(0, len(leftSections) -1 ),np.full_like(np.arange(0, len(leftSections) -1 ), 1.05, dtype=np.float64)))
+        o_one_positive = LineString(o_one_positive)
+        o_one_negative = np.column_stack((np.arange(0, len(leftSections) -1 ),np.full_like(np.arange(0, len(leftSections) -1 ), 0.95, dtype=np.float64)))
+        o_one_negative = LineString(o_one_negative)
+
+        intersection_o_one_positive = section_line.intersection(o_one_positive)
+        intersection_o_one_negative = section_line.intersection(o_one_negative)
+
+        o_one_positive_intersections = []
+        if intersection_o_one_positive.geom_type == 'MultiPoint':
+            #plt.plot(*LineString(intersection_left.geoms).xy, 'o')
+            o_one_positive_intersections = sorted(((LineString(intersection_o_one_positive.geoms).xy)[0]).tolist())
+        elif intersection_o_one_positive.geom_type == 'Point':
+            #plt.plot(*intersection_left.xy, 'o')
+            o_one_positive_intersections = [intersection_o_one_positive.xy[0].tolist()[0]]
+
+        o_one_positive_intersections = sorted(o_one_positive_intersections)
+
+        #if len(o_one_positive_intersections) % 2 != 0:
+        #   o_one_positive_intersections.append(len(leftSections))
+
+        o_one_negative_intersections = []
+        if intersection_o_one_negative.geom_type == 'MultiPoint':
+            #plt.plot(*LineString(intersection_left.geoms).xy, 'o')
+            o_one_negative_intersections = sorted(((LineString(intersection_o_one_negative.geoms).xy)[0]).tolist())
+        elif intersection_o_one_negative.geom_type == 'Point':
+            #plt.plot(*intersection_left.xy, 'o') 
+            o_one_negative_intersections = [intersection_o_one_negative.xy[0].tolist()[0]]
+
+        o_one_negative_intersections = sorted(o_one_negative_intersections)
+
+        #if len(o_one_negative_intersections) % 2 != 0:
+        #    o_one_negative_intersections.append(len(leftSections))
+
+        for x in range(len(o_one_positive_intersections)):
+            o_one_positive_intersections[x] = o_one_positive_intersections[x]*frame_interval#*frame_interval# / 3
+        for x in range(len(o_one_negative_intersections)):
+            o_one_negative_intersections[x] = o_one_negative_intersections[x]*frame_interval#*frame_interval# / 3
+
+        if leftSections[0] > 1:
+            o_one_positive_intersections.insert(0,0)
+
+        if leftSections[0] < 1:
+            o_one_negative_intersections.insert(0,0)
+
+        if leftSections[-1] > 1:
+            o_one_positive_intersections.append(len(leftSections)*frame_interval)
+
+        if leftSections[-1] < 1:
+            o_one_negative_intersections.append(len(leftSections)*frame_interval)
+
+        for x in range(len(o_one_positive_intersections)):
+            o_one_positive_intersections[x] = o_one_positive_intersections[x] / 30
+
+        for x in range(len(o_one_negative_intersections)):
+            o_one_negative_intersections[x] = o_one_negative_intersections[x] / 30
+
+        print('For left hand:')
+        print(o_one_positive_intersections)
+        print(o_one_negative_intersections)
+
+        #----------------------------------------------------------------------------------
 
         left_wrist_coords = np.column_stack((np.arange(1, len(left_wrist_coords) + 1),left_wrist_coords))
         right_wrist_coords = np.column_stack((np.arange(1, len(right_wrist_coords) + 1),right_wrist_coords))
@@ -255,82 +428,6 @@ def upload():
         fps = totalFrames/(get_video_duration(rf'C:\Users\Chinmay Gogate\ProgrammingCourse\yolotest2\pose-estimation\{video}')) 
         print(f'fps: {fps}')
         threesecondframes = fps*3
-
-        first_line_left = LineString(left_wrist_coords)
-        intersection_left = first_line_left.intersection(StomachHeights)
-
-        first_line_right = LineString(right_wrist_coords)
-        intersection_right = first_line_right.intersection(StomachHeights)
-
-        print(intersection_left)
-
-        print(intersection_right)
-
-        left_stomach_intersections = []
-        right_stomach_intersections = []
-
-        if intersection_left.geom_type == 'MultiPoint':
-            plt.plot(*LineString(intersection_left.geoms).xy, 'o')
-            left_stomach_intersections = sorted(((LineString(intersection_left.geoms).xy)[0]).tolist())
-        elif intersection_left.geom_type == 'Point':
-            plt.plot(*intersection_left.xy, 'o')
-            left_stomach_intersections = [intersection_left.xy[0].tolist()[0]]
-
-        if intersection_right.geom_type == 'MultiPoint':
-            plt.plot(*LineString(intersection_right.geoms).xy, 'o')
-            right_stomach_intersections = sorted(((LineString(intersection_right.geoms).xy)[0]).tolist())
-        elif intersection_right.geom_type == 'Point':
-            plt.plot(*intersection_right.xy, 'o')
-            right_stomach_intersections = [intersection_right.xy[0].tolist()[0]]
-
-        if addLeftIntersectionAtBeginning == True:
-            left_stomach_intersections.append(0)
-
-        if len(left_stomach_intersections) % 2 != 0:
-            left_stomach_intersections.append(totalFrames/fps)
-
-        if addRightIntersectionAtBeginning == True:
-            right_stomach_intersections.append(0)
-
-        if len(right_stomach_intersections) % 2 != 0:
-            right_stomach_intersections.append(totalFrames/fps)
-
-        left_stomach_intersections = sorted(left_stomach_intersections)
-        right_stomach_intersections = sorted(right_stomach_intersections)
-
-        print(left_stomach_intersections)
-        print(right_stomach_intersections)
-
-        left_hand_gestures_over_limit = []
-        right_hand_gestures_over_limit = []
-
-        for intersection in left_stomach_intersections:
-            if left_stomach_intersections.index(intersection) % 2 == 0:
-                gesture_start = intersection
-                print(f'gesture start: {gesture_start}')
-                gesture_end = left_stomach_intersections[left_stomach_intersections.index(intersection)+1]
-                print(f'gesture end: {gesture_end}')
-                gesture_time = gesture_end - gesture_start
-                print(gesture_time)
-                if gesture_time >= threesecondframes:
-                    left_hand_gestures_over_limit.append([gesture_start/fps,gesture_end/fps])
-
-        for intersection in right_stomach_intersections:
-            if right_stomach_intersections.index(intersection) % 2 == 0:
-                gesture_start = intersection
-                print(f'gesture start: {gesture_start}')
-                gesture_end = right_stomach_intersections[right_stomach_intersections.index(intersection)+1]
-                print(f'gesture end: {gesture_end}')
-                gesture_time = gesture_end - gesture_start
-                print(gesture_time)
-                if gesture_time >= threesecondframes:
-                    right_hand_gestures_over_limit.append([gesture_start/fps,gesture_end/fps])
-
-        print(f'left hand gestures: {left_stomach_intersections}')
-        print(f'right hand gestures: {right_stomach_intersections}')
-
-        print(f'left hand: {left_hand_gestures_over_limit}')
-        print(f'right hand: {right_hand_gestures_over_limit}')
 
         title = 25
         h1 = 20
@@ -399,7 +496,7 @@ def upload():
 
         pdf.image('max_frame.jpg',w=160,h=90)
 
-        pdf.multi_cell(txt='Graph of nose positions',w=0,h=multicellHeight)
+        pdf.multi_cell(txt='Graph of wrist',w=0,h=multicellHeight)
 
         pdf.image('plot2.png',w=280,h=210)
 
@@ -417,33 +514,17 @@ def upload():
 
         pdf.image('plot.png',w=280,h=210)
 
-        pdf.multi_cell(txt='Graph of wrist sections',w=0,h=multicellHeight)
-
-        pdf.image('plot4.png',w=280,h=210)
-
         pdf.set_font(family='Arial',style='B',size=h2)
 
         pdf.multi_cell(txt='Left hand',w=0,h=multicellHeight)
 
         pdf.set_font(family='Arial',style='B',size=p)
 
-        if len(left_hand_gestures_over_limit) > 0:
-            for gesture in left_hand_gestures_over_limit:
-                pdf.multi_cell(txt=f'The left hand gesture from {round(gesture[0],2)}s to {round(gesture[1],2)}s exceeded the three second recommendation',w=0,h=multicellHeight)
-        else:
-            pdf.multi_cell(txt=f'No right hand gestures exceeded the three second recommendation',w=0,h=multicellHeight)
-
         pdf.set_font(family='Arial',style='B',size=h2)
 
         pdf.multi_cell(txt='Right hand',w=0,h=multicellHeight)
 
         pdf.set_font(family='Arial',style='B',size=p)
-
-        if len(right_hand_gestures_over_limit) > 0:
-            for gesture in right_hand_gestures_over_limit:
-                pdf.multi_cell(txt=f'The right hand gesture from {round(gesture[0],2)}s to {round(gesture[1],2)}s exceeded the three second recommendation',w=0,h=multicellHeight)
-        else:
-            pdf.multi_cell(txt=f'No right hand gestures exceeded the three second recommendation',w=0,h=multicellHeight)
 
         response = make_response(pdf.output(dest='S').encode('latin-1'))
         response.headers.set('Content-Type', 'application/pdf')
