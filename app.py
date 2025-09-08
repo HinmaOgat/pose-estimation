@@ -124,12 +124,7 @@ def upload():
                     height, width = frame.shape[:2]
                     print(f"HEIGHTTTTT: {height}")
                     part_height = height // 9
-
-                    # Draw 7 horizontal lines to split into 8 parts
-                    #for i in range(1, 9):
-                    #    y = i * part_height
-                    #    print(y)
-                     #   cv2.line(frame, (0, y), (width, y), (0, 255, 0), 2)
+                    
                     cv2.line(frame, (0, 406), (width, 406), (0, 255, 0), 2)
                     cv2.line(frame, (0, 563), (width, 563), (0, 255, 0), 2)
                     cv2.line(frame, (0, 138), (width, 138), (0, 255, 0), 2)
@@ -299,60 +294,60 @@ def upload():
         intersection_o_one_positive = section_line.intersection(o_one_positive)
         intersection_o_one_negative = section_line.intersection(o_one_negative)
 
-        o_one_positive_intersections = []
+        o_one_positive_intersections_right = []
         if intersection_o_one_positive.geom_type == 'MultiPoint':
             #plt.plot(*LineString(intersection_left.geoms).xy, 'o')
-            o_one_positive_intersections = sorted(((LineString(intersection_o_one_positive.geoms).xy)[0]).tolist())
+            o_one_positive_intersections_right = sorted(((LineString(intersection_o_one_positive.geoms).xy)[0]).tolist())
         elif intersection_o_one_positive.geom_type == 'Point':
             #plt.plot(*intersection_left.xy, 'o')
-            o_one_positive_intersections = [intersection_o_one_positive.xy[0].tolist()[0]]
+            o_one_positive_intersections_right = [intersection_o_one_positive.xy[0].tolist()[0]]
 
-        o_one_positive_intersections = sorted(o_one_positive_intersections)
+        o_one_positive_intersections_right = sorted(o_one_positive_intersections_right)
 
         #if len(o_one_positive_intersections) % 2 != 0:
         #   o_one_positive_intersections.append(len(rightSections))
 
-        o_one_negative_intersections = []
+        o_one_negative_intersections_right = []
         if intersection_o_one_negative.geom_type == 'MultiPoint':
             #plt.plot(*LineString(intersection_left.geoms).xy, 'o')
-            o_one_negative_intersections = sorted(((LineString(intersection_o_one_negative.geoms).xy)[0]).tolist())
+            o_one_negative_intersections_right = sorted(((LineString(intersection_o_one_negative.geoms).xy)[0]).tolist())
         elif intersection_o_one_negative.geom_type == 'Point':
             #plt.plot(*intersection_left.xy, 'o') 
-            o_one_negative_intersections = [intersection_o_one_negative.xy[0].tolist()[0]]
+            o_one_negative_intersections_right = [intersection_o_one_negative.xy[0].tolist()[0]]
 
-        o_one_negative_intersections = sorted(o_one_negative_intersections)
+        o_one_negative_intersections_right = sorted(o_one_negative_intersections_right)
 
         #if len(o_one_negative_intersections) % 2 != 0:
         #    o_one_negative_intersections.append(len(rightSections))
 
-        for x in range(len(o_one_positive_intersections)):
-            o_one_positive_intersections[x] = o_one_positive_intersections[x]*frame_interval#*10# / 3
-        for x in range(len(o_one_negative_intersections)):
-            o_one_negative_intersections[x] = o_one_negative_intersections[x]*frame_interval#*10# / 3
+        for x in range(len(o_one_positive_intersections_right)):
+            o_one_positive_intersections_right[x] = o_one_positive_intersections_right[x]*frame_interval#*10# / 3
+        for x in range(len(o_one_negative_intersections_right)):
+            o_one_negative_intersections_right[x] = o_one_negative_intersections_right[x]*frame_interval#*10# / 3
 
         if rightSections[0] > 1:
-            o_one_positive_intersections.insert(0,0)
+            o_one_positive_intersections_right.insert(0,0)
 
         if rightSections[0] < 1:
-            o_one_negative_intersections.insert(0,0)
+            o_one_negative_intersections_right.insert(0,0)
 
         if rightSections[-1] > 1:
-            o_one_positive_intersections.append(len(rightSections)*frame_interval)
+            o_one_positive_intersections_right.append(len(rightSections)*frame_interval)
 
         if rightSections[-1] < 1:
-            o_one_negative_intersections.append(len(rightSections)*frame_interval)
+            o_one_negative_intersections_right.append(len(rightSections)*frame_interval)
 
-        for x in range(len(o_one_positive_intersections)):
-            o_one_positive_intersections[x] = o_one_positive_intersections[x] / 30
+        for x in range(len(o_one_positive_intersections_right)):
+            o_one_positive_intersections_right[x] = o_one_positive_intersections_right[x] / 30
 
-        for x in range(len(o_one_negative_intersections)):
-            o_one_negative_intersections[x] = o_one_negative_intersections[x] / 30
+        for x in range(len(o_one_negative_intersections_right)):
+            o_one_negative_intersections_right[x] = o_one_negative_intersections_right[x] / 30
 
         print('For right hand:')
-        print(o_one_positive_intersections)
-        print(o_one_negative_intersections)
+        print(o_one_positive_intersections_right)
+        print(o_one_negative_intersections_right)
 
-        #
+        #-----------------------------------------------------------
 
         xtime = np.arange(len(leftSections))
 
@@ -366,58 +361,58 @@ def upload():
         intersection_o_one_positive = section_line.intersection(o_one_positive)
         intersection_o_one_negative = section_line.intersection(o_one_negative)
 
-        o_one_positive_intersections = []
+        o_one_positive_intersections_left = []
         if intersection_o_one_positive.geom_type == 'MultiPoint':
             #plt.plot(*LineString(intersection_left.geoms).xy, 'o')
-            o_one_positive_intersections = sorted(((LineString(intersection_o_one_positive.geoms).xy)[0]).tolist())
+            o_one_positive_intersections_left = sorted(((LineString(intersection_o_one_positive.geoms).xy)[0]).tolist())
         elif intersection_o_one_positive.geom_type == 'Point':
             #plt.plot(*intersection_left.xy, 'o')
-            o_one_positive_intersections = [intersection_o_one_positive.xy[0].tolist()[0]]
+            o_one_positive_intersections_left = [intersection_o_one_positive.xy[0].tolist()[0]]
 
-        o_one_positive_intersections = sorted(o_one_positive_intersections)
+        o_one_positive_intersections_left = sorted(o_one_positive_intersections_left)
 
         #if len(o_one_positive_intersections) % 2 != 0:
         #   o_one_positive_intersections.append(len(leftSections))
 
-        o_one_negative_intersections = []
+        o_one_negative_intersections_left = []
         if intersection_o_one_negative.geom_type == 'MultiPoint':
             #plt.plot(*LineString(intersection_left.geoms).xy, 'o')
-            o_one_negative_intersections = sorted(((LineString(intersection_o_one_negative.geoms).xy)[0]).tolist())
+            o_one_negative_intersections_left = sorted(((LineString(intersection_o_one_negative.geoms).xy)[0]).tolist())
         elif intersection_o_one_negative.geom_type == 'Point':
             #plt.plot(*intersection_left.xy, 'o') 
-            o_one_negative_intersections = [intersection_o_one_negative.xy[0].tolist()[0]]
+            o_one_negative_intersections_left = [intersection_o_one_negative.xy[0].tolist()[0]]
 
-        o_one_negative_intersections = sorted(o_one_negative_intersections)
+        o_one_negative_intersections_left = sorted(o_one_negative_intersections_left)
 
         #if len(o_one_negative_intersections) % 2 != 0:
         #    o_one_negative_intersections.append(len(leftSections))
 
-        for x in range(len(o_one_positive_intersections)):
-            o_one_positive_intersections[x] = o_one_positive_intersections[x]*frame_interval#*frame_interval# / 3
-        for x in range(len(o_one_negative_intersections)):
-            o_one_negative_intersections[x] = o_one_negative_intersections[x]*frame_interval#*frame_interval# / 3
+        for x in range(len(o_one_positive_intersections_left)):
+            o_one_positive_intersections_left[x] = o_one_positive_intersections_left[x]*frame_interval#*frame_interval# / 3
+        for x in range(len(o_one_negative_intersections_left)):
+            o_one_negative_intersections_left[x] = o_one_negative_intersections_left[x]*frame_interval#*frame_interval# / 3
 
         if leftSections[0] > 1:
-            o_one_positive_intersections.insert(0,0)
+            o_one_positive_intersections_left.insert(0,0)
 
         if leftSections[0] < 1:
-            o_one_negative_intersections.insert(0,0)
+            o_one_negative_intersections_left.insert(0,0)
 
         if leftSections[-1] > 1:
-            o_one_positive_intersections.append(len(leftSections)*frame_interval)
+            o_one_positive_intersections_left.append(len(leftSections)*frame_interval)
 
         if leftSections[-1] < 1:
-            o_one_negative_intersections.append(len(leftSections)*frame_interval)
+            o_one_negative_intersections_left.append(len(leftSections)*frame_interval)
 
-        for x in range(len(o_one_positive_intersections)):
-            o_one_positive_intersections[x] = o_one_positive_intersections[x] / 30
+        for x in range(len(o_one_positive_intersections_left)):
+            o_one_positive_intersections_left[x] = o_one_positive_intersections_left[x] / 30
 
-        for x in range(len(o_one_negative_intersections)):
-            o_one_negative_intersections[x] = o_one_negative_intersections[x] / 30
+        for x in range(len(o_one_negative_intersections_left)):
+            o_one_negative_intersections_left[x] = o_one_negative_intersections_left[x] / 30
 
         print('For left hand:')
-        print(o_one_positive_intersections)
-        print(o_one_negative_intersections)
+        print(o_one_positive_intersections_left)
+        print(o_one_negative_intersections_left)
 
         #----------------------------------------------------------------------------------
 
@@ -496,9 +491,32 @@ def upload():
 
         pdf.image('max_frame.jpg',w=160,h=90)
 
-        pdf.multi_cell(txt='Graph of wrist',w=0,h=multicellHeight)
+        sectionOne = 0
+        sectionTwo = 0
+        sectionThree = 0
+        sectionFour = 0
+        sectionFive = 0
+        for section in sections:
+            if section == 1:
+                sectionOne += 1
+            if section == 2:
+                sectionTwo += 1
+            if section == 3:
+                sectionThree += 1
+            if section == 4:
+                sectionFour += 1
+            if section == 5:
+                sectionFive += 1
+        
+        sectionOne = sectionOne/len(sections)*100
+        sectionTwo = sectionTwo/len(sections)*100
+        sectionThree = sectionThree/len(sections)*100
+        sectionFour = sectionFour/len(sections)*100
+        sectionFive = sectionFive/len(sections)*100
 
-        pdf.image('plot2.png',w=280,h=210)
+        pdf.set_font(family='Arial',style='B',size=p)
+
+        pdf.multi_cell(txt=f'You were in the corners of the screen for {sectionOne+sectionFive}% of the presentation.',w=0,h=multicellHeight)
 
         pdf.multi_cell(txt='Graph of sections',w=0,h=multicellHeight)
 
@@ -516,15 +534,77 @@ def upload():
 
         pdf.set_font(family='Arial',style='B',size=h2)
 
+        pdf.multi_cell(txt='Graph of wrist sections',w=0,h=multicellHeight)
+
+        pdf.image('plot2.png',w=280,h=210)
+
+        left_gestures = []
+
         pdf.multi_cell(txt='Left hand',w=0,h=multicellHeight)
 
         pdf.set_font(family='Arial',style='B',size=p)
 
+        print(f'o_one_positive_intersections_lefto_one_positive_intersections_left:{o_one_positive_intersections_left}')
+
+        for i in range(len(o_one_positive_intersections_left)):
+            if i % 2 == 0:
+                try:
+                    left_gestures.append((o_one_positive_intersections_left[i],o_one_positive_intersections_left[i+1]))
+                except:
+                    pass
+
+        for i in range(len(o_one_negative_intersections_left)):
+            if i % 2 == 0:
+                try:
+                    left_gestures.append((o_one_negative_intersections_left[i],o_one_negative_intersections_left[i+1]))
+                except:
+                    pass
+
+        left_gestures = sorted(left_gestures, key=lambda x: x[0])
+
+        left_gestures_over_limit = []
+
+        for gesture in left_gestures:
+            pdf.multi_cell(txt=f'Hand gesture from {gesture[0]} to {gesture[1]}',w=0,h=multicellHeight)
+            if int(gesture[1]) - int(gesture[0]) >= 5:
+                left_gestures_over_limit.append(gesture)
+
+        for gesture in left_gestures_over_limit:
+            pdf.multi_cell(txt=f'The gesture from {gesture[0]} to {gesture[1]} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
+
         pdf.set_font(family='Arial',style='B',size=h2)
+
+        right_gestures = []
 
         pdf.multi_cell(txt='Right hand',w=0,h=multicellHeight)
 
         pdf.set_font(family='Arial',style='B',size=p)
+
+        for i in range(len(o_one_positive_intersections_right)):
+            if i % 2 == 0:
+                try:
+                    right_gestures.append((o_one_positive_intersections_right[i],o_one_positive_intersections_right[i+1]))
+                except:
+                    pass
+
+        for i in range(len(o_one_negative_intersections_right)):
+            if i % 2 == 0:
+                try:
+                    right_gestures.append((o_one_negative_intersections_right[i],o_one_negative_intersections_right[i+1]))
+                except:
+                    pass
+
+        right_gestures = sorted(right_gestures, key=lambda x: x[0])
+
+        right_gestures_over_limit = []
+
+        for gesture in right_gestures:
+            pdf.multi_cell(txt=f'Hand gesture from {gesture[0]} to {gesture[1]}',w=0,h=multicellHeight)
+            if int(gesture[1]) - int(gesture[0]) >= 5:
+                right_gestures_over_limit.append(gesture)
+
+        for gesture in right_gestures_over_limit:
+            pdf.multi_cell(txt=f'The gesture from {gesture[0]} to {gesture[1]} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
 
         response = make_response(pdf.output(dest='S').encode('latin-1'))
         response.headers.set('Content-Type', 'application/pdf')

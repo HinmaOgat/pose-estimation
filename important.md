@@ -1,2 +1,0 @@
- - hand gestures should waist level or above, as that ensures face and hands are in same line of sight
- - do gestures in chest area for around 3 seconds at a time

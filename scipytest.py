@@ -20,8 +20,6 @@ from scipy.signal import find_peaks
 #velocity_moving_average = velocity_moving_average.tolist()
 
 #velocity_moving_average=pandasVelocity.tolist()
-
-#In this example we will use a threshold of 5 and a distance of 1
 x = np.arange(len(positionsRaw))
 y = np.array(positionsRaw)
 
@@ -42,12 +40,8 @@ plt.plot(x,y)
 plt.xlabel('Temperature (degC)')
 plt.ylabel('Solubility of O2 (mg/L)')
 
-#Plot the maximum points on the data plot as green stars
 plt.plot(x_points_max, y_points_max, 'g*')
 
-#Plot the minimum points on the data plot as red dots
 plt.plot(x_points_min, y_points_min, 'ro')
 
-#Since the point at the first max index passes the threshold requirement it is plotted,
-#but the second max index does not pass the threshold requirement so it was NOT plotted.
 plt.show()
