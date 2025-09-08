@@ -57,6 +57,8 @@ def section_x(x_coord,sectionNo):
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+#Flask stuff
+
 @app.route('/', methods=['GET','POST'])
 @app.route('/upload', methods=['GET','POST'])
 def upload():
@@ -72,6 +74,7 @@ def upload():
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         if 'scriptFile' in request.files:
+            #If the user has submitted a script file, it means they want their speech analysed. 
             print(f'request.files: {request.files}')
             scriptFile = request.files['scriptFile']
             print(scriptFile)
@@ -84,6 +87,7 @@ def upload():
                     scriptFile = f'userVideo/{scriptFile.filename}'
                     with open(scriptFile, 'r',encoding='utf-8') as f:
                         references = [[f.read()]]
+                        #references being the script file
         video = f'userVideo/{file.filename}'
         import cv2
         left_wrist_coords = []
@@ -124,7 +128,7 @@ def upload():
                     height, width = frame.shape[:2]
                     print(f"HEIGHTTTTT: {height}")
                     part_height = height // 9
-                    
+
                     cv2.line(frame, (0, 406), (width, 406), (0, 255, 0), 2)
                     cv2.line(frame, (0, 563), (width, 563), (0, 255, 0), 2)
                     cv2.line(frame, (0, 138), (width, 138), (0, 255, 0), 2)
@@ -132,7 +136,7 @@ def upload():
                     print(frame_number)
                     width = result.orig_shape[1]
 
-                    #Confirm which human on the screen is a presenter
+                    #Confirm which human on the screen is a presenter (whichever has the greatest height)
                     xyxyboxes = result.boxes.xyxy.tolist()
                     heights = []
                     for xyxybox in xyxyboxes:
@@ -140,7 +144,7 @@ def upload():
                     presenterIndex = heights.index(max(heights))
                     print(xyxyboxes[presenterIndex][0])
 
-                    #Note the maximum and minium horizontal positions of the user
+                    #Note the maximum and minimum horizontal positions of the user. If the user is at the leftest or rightest point that they have been of the frames analysed, that is marked as the new min and max x positions
                     if xyxyboxes[presenterIndex][0] < min_x:
                         min_x = xyxyboxes[presenterIndex][0]
                         min_frame = frame_number-1
@@ -153,7 +157,7 @@ def upload():
                         orig_img = result.orig_img
                         cv2.imwrite('max_frame.jpg', orig_img)
 
-                    #keypoints
+                    #Body keypoints
                     result_keypoint_coords = result.keypoints.xyn.tolist()[presenterIndex]
                     result_keypoint_coords = result.keypoints.xyn.tolist()[0]
                     left_wrist = result_keypoint_coords[9][1]*-1
@@ -165,7 +169,10 @@ def upload():
                     print(result_keypoint_coords[0][0])
                     x_positions.append(result_keypoint_coords[0][0])
                     
+                    #Adding the horizontal section the user is in
                     sections.append(section_x(result_keypoint_coords[0][0]*1280,sectionNo))
+
+                    #The following code is to get the stomach, knee, hip, shoulder heights of the presenter. It is done by averaging the y-coordinate of the user's left and right shoulder, hip, etc
 
                     presenterStomachHeight = ((result_keypoint_coords[11][1]+result_keypoint_coords[5][1])/2+(result_keypoint_coords[12][1]+result_keypoint_coords[6][1])/2)/2*-1+ 0.1
                     
@@ -178,7 +185,8 @@ def upload():
                     presenterShoulderHeight = (result_keypoint_coords[5][1]+result_keypoint_coords[5][1])/2*-1
                     print(f'Shoulder height: {((result_keypoint_coords[5][1]+result_keypoint_coords[5][1])/2)*height}')
                     shoulderHeights.append(presenterShoulderHeight)
-                    #rightSections.append([presenterKneeHeight,right_wrist,presenterHipHeight])
+
+                    #For the right wrist, determining which 'section' of the user's body it is in
                     if right_wrist > presenterKneeHeight and right_wrist < presenterHipHeight:
                         rightSections.append(1)
                     elif right_wrist > presenterHipHeight and right_wrist < presenterShoulderHeight:
@@ -188,6 +196,7 @@ def upload():
                     else:
                         rightSections.append(3)
 
+                    #Same for the left wrist
                     if left_wrist > presenterKneeHeight and left_wrist < presenterHipHeight:
                         leftSections.append(1)
                     elif left_wrist > presenterHipHeight and left_wrist < presenterShoulderHeight:
@@ -203,12 +212,13 @@ def upload():
                 right_wrist_coords.append(0)
             frame_number += 1
         cap.release()
-        cv2.destroyAllWindows()
+        cv2.destroyAllWindows() #Frames done analysing!
 
         totalFrames = frame_number
 
         spaceUtilized = f"{int(round((max_x - min_x)/width * 100,0))}%"
 
+        #Plotting the presenter's horizontal position...
         plt.clf()
         plt.plot(x_positions)
         plt.title('X-coordinate of nose of presenter per frame')
@@ -219,6 +229,7 @@ def upload():
         plt.xticks(color='w')
         plt.savefig(f"plot2.png")
 
+        #and their horizontal sections...
         plt.clf()
         plt.plot(sections)
         plt.title('Section of presenter per frame')
@@ -229,6 +240,7 @@ def upload():
         plt.ylim(0,5)
         plt.savefig(f"plot3.png")
         
+        #And their wrist coordinates & hip, shoulder, knee, stomach heights...
         plt.clf()
         with open('loggingFile.txt','w') as file:
             file.write(f"{right_wrist_coords}")
@@ -250,6 +262,7 @@ def upload():
         plt.xticks(np.arange(0, xmax + 1, frame_interval))
         plt.savefig(f"plot.png")
 
+        #and their wrist sections!
         print(f'rightSections:{rightSections}')
         print(f'leftSections:{leftSections}')
         plt.clf()
@@ -263,7 +276,8 @@ def upload():
         #----------------------------------------------------------------------------------
 
         frame_interval = 5
-
+        
+        #These loops are to eliminate any fluctuations; if the user's hand goes from section 2 to section one for one time and then back to section 2, it was probably just due to them being in that approximate area instead of a hand gesture. This eliminates this; if the data is 2,2,1,2 (where 1 is clearly just a fluctuation) it changes it to 2,2,2,2
         for s in range(len(rightSections)):
             if s == 0 or s == len(rightSections) - 1:
                 pass
@@ -278,9 +292,12 @@ def upload():
                 if leftSections[s - 1] == leftSections[s + 1] and leftSections[s] != leftSections[s - 1]:
                     leftSections[s] = leftSections[s - 1]
 
+        #More plotting... of the user's wrist sections
         plt.plot(rightSections)
         plt.plot(leftSections)
         plt.show()
+
+        #The following code gets the intersection between the user's right wrist section graph and the y-values 1.05 and 0.95. As the user's wrist is at y=1 when in their 'rest area', this detects when they leave that area (go to 0 or 2 or 3), thus indicating the start of the gesture
 
         xtime = np.arange(len(rightSections))
 
@@ -349,6 +366,8 @@ def upload():
 
         #-----------------------------------------------------------
 
+        #And same for the left wrist
+
         xtime = np.arange(len(leftSections))
 
         section_line = LineString(np.column_stack((xtime, leftSections)))
@@ -416,13 +435,18 @@ def upload():
 
         #----------------------------------------------------------------------------------
 
+        #This was old code which I am keeping in case I need it, but it originally was part of code to detect interactions between the user's wrists and their stomach
         left_wrist_coords = np.column_stack((np.arange(1, len(left_wrist_coords) + 1),left_wrist_coords))
         right_wrist_coords = np.column_stack((np.arange(1, len(right_wrist_coords) + 1),right_wrist_coords))
         StomachHeights = np.column_stack((np.arange(1, len(StomachHeights) + 1),StomachHeights))
         StomachHeights = LineString(StomachHeights)
+
+        #Gets the fps
         fps = totalFrames/(get_video_duration(rf'C:\Users\Chinmay Gogate\ProgrammingCourse\yolotest2\pose-estimation\{video}')) 
         print(f'fps: {fps}')
         threesecondframes = fps*3
+
+        #The following code is for the generation of the PDF file
 
         title = 25
         h1 = 20
@@ -438,9 +462,12 @@ def upload():
 
         pdf.multi_cell(txt=f'Your presentation (total frames: {totalFrames}, fps:{fps})',w=0,h=50)
 
+        #Earlier, references was the script file
+        
         if references[0][0] != None:
             references[0][0] = references[0][0].lower()
             references[0][0] = references[0][0].translate(str.maketrans('','',string.punctuation))
+            #loads the whisper model
             model = whisper.load_model('base.en')
             whisper.DecodingOptions(language='en', fp16=False)
             result = model.transcribe(video)
@@ -458,11 +485,13 @@ def upload():
             textSpeech = textSpeech.translate(str.maketrans('','',string.punctuation))
             print(textSpeech)
             ffmpeg_path = get_ffmpeg_exe()
+            #sacrebleu is a tool used for setting 'scores' for how well two texts match each other. It is actually for assessing the quality of machine-generated text, which is similar to what I am trying to see (how well the speech-to-text understands the user's speaking, which will help me gauge how clear they are speaking)
             sacrebleu = evaluate.load('sacrebleu')
             predictions = [textSpeech]
             results = sacrebleu.compute(predictions=predictions, references=references)
             print(results)
             print(textSpeech)
+            #Gets the clarity percentage
             score = results['score']
 
             pdf.set_font(family='Arial',style='B',size=h1)
@@ -474,6 +503,8 @@ def upload():
             pdf.multi_cell(txt=f'{textSpeech}',w=0,h=40)
 
             pdf.multi_cell(txt=f'Clarity: {round(score, 2)}%',w=0,h=40)
+
+            #Remember, all that was just if the user had submitted a script. If not, it is not shown and only the results of their body analysis are returned
 
         pdf.set_font(family='Arial',style='B',size=h1)
 
@@ -491,6 +522,7 @@ def upload():
 
         pdf.image('max_frame.jpg',w=160,h=90)
 
+        #The following code returns how much of the time they spent in the 'center' of the stage; that is, the middle 60% (sections 2,3 and 4)
         sectionOne = 0
         sectionTwo = 0
         sectionThree = 0
@@ -546,6 +578,8 @@ def upload():
 
         print(f'o_one_positive_intersections_lefto_one_positive_intersections_left:{o_one_positive_intersections_left}')
 
+        #Adds all the hand gestures done by the left hand to a list
+
         for i in range(len(o_one_positive_intersections_left)):
             if i % 2 == 0:
                 try:
@@ -564,6 +598,8 @@ def upload():
 
         left_gestures_over_limit = []
 
+        #Adds all the left hand gestures done for more than 5 seconds to another list
+
         for gesture in left_gestures:
             pdf.multi_cell(txt=f'Hand gesture from {gesture[0]} to {gesture[1]}',w=0,h=multicellHeight)
             if int(gesture[1]) - int(gesture[0]) >= 5:
@@ -579,6 +615,8 @@ def upload():
         pdf.multi_cell(txt='Right hand',w=0,h=multicellHeight)
 
         pdf.set_font(family='Arial',style='B',size=p)
+
+        #Adds all the hand gestures done by the right hand to a list
 
         for i in range(len(o_one_positive_intersections_right)):
             if i % 2 == 0:
@@ -598,6 +636,8 @@ def upload():
 
         right_gestures_over_limit = []
 
+        #Adds all the right hand gestures done for more than 5 seconds to another list
+
         for gesture in right_gestures:
             pdf.multi_cell(txt=f'Hand gesture from {gesture[0]} to {gesture[1]}',w=0,h=multicellHeight)
             if int(gesture[1]) - int(gesture[0]) >= 5:
@@ -610,9 +650,13 @@ def upload():
         response.headers.set('Content-Type', 'application/pdf')
         response.headers.set('Content-Disposition', 'inline', filename=f'presentation-report-{datetime.datetime.now().strftime("%H%M%S")}.pdf')
         print("Process finished --- %s seconds ---" % (time.time() - start_time))
+        #The PDF is loaded onto the user's tab
         return response
+
+    #If the user goes back, they go back to the application!
     return render_template('upload.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
-    
+
+#And we're done
