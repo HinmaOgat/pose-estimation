@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, make_response
+from flask import Flask, render_template, request, redirect, url_for, make_response,session
 print(1)
 from werkzeug.utils import secure_filename
 print(2)
@@ -36,6 +36,9 @@ import datetime
 print(19)
 import sys
 print(20)
+
+from openai import OpenAI
+import base64
 from unidecode import unidecode
 
 UPLOAD_FOLDER = './userVideo'
@@ -72,20 +75,34 @@ def section_x(x_coord,sectionNo):
             if x_coord > (1280/sectionNo)*n and x_coord <= (1280/sectionNo)*(n+1):
                 return n+1
 
+def encode_image(image_path):
+    with open(image_path,'rb') as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+#app.secret_key = 
 
+global alertMessage
+alertMessage = [None,None]
 #Flask stuff
 
 @app.route('/', methods=['GET','POST'])
 @app.route('/upload', methods=['GET','POST'])
 def upload():
+    alertMessage = session.pop('alertMessage', None)
     if request.method == 'POST':
+        frame_interval = int(request.form.get('frameInterval'))
+        print(request.form)
+        topic = request.form.get('topic')
+        print(f'topic: {topic}')
         references = [[None]]
         if 'file' not in request.files:
+            session['alertMessage'] = ['bad', 'Please upload a VIDEO file']
             return redirect(url_for('upload'))
         file = request.files['file']
         if file.filename == '':
+            session['alertMessage'] = ['bad', 'No file selected']
             return redirect(url_for('upload'))
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -115,7 +132,7 @@ def upload():
         x_positions = []
         sections = []
         sectionNo = 5
-        frame_interval = 5
+        #frame_interval = 5
         min_frame = None
         max_frame = None
 
@@ -136,12 +153,15 @@ def upload():
                     height, width = frame.shape[:2]
                     #print(f"HEIGHTTTTT: {height}")
                     part_height = height // 9
+
                     if frame_number != 0:
                         pass
-                        cv2.line(frame, (0, round(rest_Top*720*-1)), (width, round(rest_Top*720*-1)), (0, 255, 0), 2)
-                        cv2.line(frame, (0, round(rest_Bottom*720*-1)), (width, round(rest_Bottom*720*-1)), (0, 255, 0), 2)
+                        cv2.line(frame, (0, round(rest_Top_Left*720*-1)), (width, round(rest_Top_Left*720*-1)), (0, 255, 0), 2)
+                        cv2.line(frame, (0, round(rest_Bottom_Left*720*-1)), (width, round(rest_Bottom_Left*720*-1)), (0, 255, 0), 2)
+                        cv2.line(frame, (0, round(rest_Top_Right*720*-1)), (width, round(rest_Top_Right*720*-1)), (0, 0, 255), 2)
+                        cv2.line(frame, (0, round(rest_Bottom_Right*720*-1)), (width, round(rest_Bottom_Right*720*-1)), (0, 0, 255), 2)
 
-                    result = model(frame, show=False, conf=0.3, save=True)[0]
+                    result = model(frame, show=True, conf=0.3, save=True)[0]
                     width = result.orig_shape[1]
 
                     #Confirm which human on the screen is a presenter (whichever has the greatest height)
@@ -150,6 +170,7 @@ def upload():
                     for xyxybox in xyxyboxes:
                         heights.append(xyxybox[3]-xyxybox[1])
                     presenterIndex = heights.index(max(heights))
+                    print(f'max(heights): {max(heights)}')
 
                     #Note the maximum and minimum horizontal positions of the user. If the user is at the leftest or rightest point that they have been of the frames analysed, that is marked as the new min and max x positions
                     if xyxyboxes[presenterIndex][0] < min_x:
@@ -163,7 +184,7 @@ def upload():
                         max_frame = frame_number-1
                         orig_img = result.orig_img
                         cv2.imwrite('max_frame.jpg', orig_img)
-
+                    
                     #Body keypoints
                     result_keypoint_coords = result.keypoints.xyn.tolist()[presenterIndex]
                     result_keypoint_coords = result.keypoints.xyn.tolist()[0]
@@ -174,9 +195,13 @@ def upload():
                     x_positions.append(result_keypoint_coords[0][0])
                     
                     if frame_number == 0:
-                        restArea = (left_wrist + right_wrist) / 2
-                        rest_Top = restArea + 0.1
-                        rest_Bottom = restArea - 0.1
+                        maxheightsdividedbyseventwentypluszeropointone = max(heights)/720 * 0.1
+                        #restArea = (left_wrist + right_wrist) / 2
+                        rest_Top_Left = left_wrist + max(heights)/720 * 0.1
+                        rest_Bottom_Left = left_wrist - max(heights)/720 * 0.1
+                        rest_Top_Right = right_wrist + max(heights)/720 * 0.1
+                        rest_Bottom_Right = right_wrist - max(heights)/720 * 0.1
+                        cv2.imwrite('resulttt.jpg', result)
 
                     #Adding the horizontal section the user is in
                     sections.append(section_x(result_keypoint_coords[0][0]*1280,sectionNo))
@@ -197,20 +222,20 @@ def upload():
 
                     #For the right wrist, determining which 'section' of the user's body it is in
 
-                    if right_wrist > rest_Bottom and right_wrist < rest_Top:
+                    if right_wrist > rest_Bottom_Right and right_wrist < rest_Top_Right:
                         rightSections.append(1)
-                    elif right_wrist > rest_Top:
+                    elif right_wrist > rest_Top_Right:
                         rightSections.append(2)
-                    elif right_wrist < rest_Bottom:
+                    elif right_wrist < rest_Bottom_Right:
                         rightSections.append(0)
 
                     #Same for the left wrist
 
-                    if left_wrist > rest_Bottom and left_wrist < rest_Top:
+                    if left_wrist > rest_Bottom_Left and left_wrist < rest_Top_Left:
                         leftSections.append(1)
-                    elif left_wrist > rest_Top:
+                    elif left_wrist > rest_Top_Left:
                         leftSections.append(2)
-                    elif left_wrist < rest_Bottom:
+                    elif left_wrist < rest_Bottom_Left:
                         leftSections.append(0)
                     '''
                     if right_wrist > presenterKneeHeight and right_wrist < presenterHipHeight:
@@ -241,6 +266,7 @@ def upload():
         cv2.destroyAllWindows() #Frames done analysing!
 
         totalFrames = frame_number
+        fps = totalFrames/(get_video_duration(os.path.join(os.getcwd(), video))) 
 
         spaceUtilized = f"{int(round((max_x - min_x)/width * 100,0))}%"
 
@@ -288,8 +314,8 @@ def upload():
 
         #and their wrist sections!
         plt.clf()
-        plt.plot(list(range(1,len(rightSections)*frame_interval,frame_interval)),rightSections,label="Right hand")
-        plt.plot(list(range(1,len(leftSections)*frame_interval,frame_interval)),leftSections,label="Left hand")
+        plt.plot(list(range(1,len(rightSections)*frame_interval+1,frame_interval)),rightSections,label="Right hand")
+        plt.plot(list(range(1,len(leftSections)*frame_interval+1,frame_interval)),leftSections,label="Left hand")
         plt.legend()
         plt.title('When inside rest area')
         plt.savefig('plot2.png')
@@ -304,6 +330,9 @@ def upload():
                 if rightSections[s - 1] == rightSections[s + 1] and rightSections[s] != rightSections[s - 1]:
                     rightSections[s] = rightSections[s - 1]
 
+        print('Left sections before')
+        print(leftSections)
+
         for s in range(len(leftSections)):
             if s == 0 or s == len(leftSections) - 1:
                 pass
@@ -312,6 +341,8 @@ def upload():
                     leftSections[s] = leftSections[s - 1]
 
         #The following code gets the intersection between the user's right wrist section graph and the y-values 1.05 and 0.95. As the user's wrist is at y=1 when in their 'rest area', this detects when they leave that area (go to 0 or 2 or 3), thus indicating the start of the gesture
+        print('Left sections after')
+        print(leftSections)
 
         xtime = np.arange(len(rightSections))
 
@@ -334,6 +365,9 @@ def upload():
             o_one_positive_intersections_right = [intersection_o_one_positive.xy[0].tolist()[0]]
 
         o_one_positive_intersections_right = sorted(o_one_positive_intersections_right)
+
+        print('o_one_positive_intersections_right')
+        print(o_one_positive_intersections_right)
 
         #if len(o_one_positive_intersections) % 2 != 0:
         #   o_one_positive_intersections.append(len(rightSections))
@@ -369,10 +403,30 @@ def upload():
             o_one_negative_intersections_right.append(len(rightSections)*frame_interval)
 
         for x in range(len(o_one_positive_intersections_right)):
-            o_one_positive_intersections_right[x] = o_one_positive_intersections_right[x] / 30
+            o_one_positive_intersections_right[x] = o_one_positive_intersections_right[x] / fps
 
         for x in range(len(o_one_negative_intersections_right)):
-            o_one_negative_intersections_right[x] = o_one_negative_intersections_right[x] / 30
+            o_one_negative_intersections_right[x] = o_one_negative_intersections_right[x] / fps
+        '''
+        right_values_to_remove = []
+        for x in range(len(o_one_positive_intersections_right)):
+            if (x + 1) % 2 == 0 and x != len(o_one_positive_intersections_right) - 1:
+                if o_one_positive_intersections_right[x+1] - o_one_positive_intersections_right[x] < 0.5:
+                    right_values_to_remove.append(o_one_positive_intersections_right[x])
+                    right_values_to_remove.append(o_one_positive_intersections_right[x+1])
+
+        for value in right_values_to_remove:
+            o_one_positive_intersections_right.remove(value)
+
+        right_values_to_remove = []
+        for x in range(len(o_one_negative_intersections_right)):
+            if (x + 1) % 2 == 0 and x != len(o_one_negative_intersections_right) - 1:
+                if o_one_negative_intersections_right[x+1] - o_one_negative_intersections_right[x] < 0.5:
+                    right_values_to_remove.append(o_one_negative_intersections_right[x])
+                    right_values_to_remove.append(o_one_negative_intersections_right[x+1])
+
+        for value in right_values_to_remove:
+            o_one_negative_intersections_right.remove(value)'''
 
         #print('For right hand:')
         #print(o_one_positive_intersections_right)
@@ -438,10 +492,30 @@ def upload():
             o_one_negative_intersections_left.append(len(leftSections)*frame_interval)
 
         for x in range(len(o_one_positive_intersections_left)):
-            o_one_positive_intersections_left[x] = o_one_positive_intersections_left[x] / 30
+            o_one_positive_intersections_left[x] = o_one_positive_intersections_left[x] / fps
 
         for x in range(len(o_one_negative_intersections_left)):
-            o_one_negative_intersections_left[x] = o_one_negative_intersections_left[x] / 30
+            o_one_negative_intersections_left[x] = o_one_negative_intersections_left[x] / fps
+        '''
+        left_values_to_remove = []
+        for x in range(len(o_one_positive_intersections_left)):
+            if (x + 1) % 2 == 0 and x != len(o_one_positive_intersections_left) - 1:
+                if o_one_positive_intersections_left[x+1] - o_one_positive_intersections_left[x] < 0.5:
+                    left_values_to_remove.append(o_one_positive_intersections_left[x])
+                    left_values_to_remove.append(o_one_positive_intersections_left[x+1])
+
+        for value in left_values_to_remove:
+            o_one_positive_intersections_left.remove(value)
+
+        left_values_to_remove = []
+        for x in range(len(o_one_negative_intersections_left)):
+            if (x + 1) % 2 == 0 and x != len(o_one_negative_intersections_left) - 1:
+                if o_one_negative_intersections_left[x+1] - o_one_negative_intersections_left[x] < 0.5:
+                    left_values_to_remove.append(o_one_negative_intersections_left[x])
+                    left_values_to_remove.append(o_one_negative_intersections_left[x+1])
+
+        for value in left_values_to_remove:
+            o_one_negative_intersections_left.remove(value)'''
 
         #print('For left hand:')
         #print(o_one_positive_intersections_left)
@@ -456,7 +530,7 @@ def upload():
         StomachHeights = LineString(StomachHeights)
 
         #Gets the fps
-        fps = totalFrames/(get_video_duration(rf'C:\Users\Chinmay Gogate\ProgrammingCourse\yolotest2\pose-estimation\{video}')) 
+        
         threesecondframes = fps*3
 
         #The following code is for the generation of the PDF file
@@ -472,10 +546,6 @@ def upload():
         pdf.add_page()
 
         pdf.set_font(family='Arial',style='B',size=title)
-
-        pdf.multi_cell(txt=f'Your presentation (total frames: {totalFrames}, fps:{fps})',w=0,h=50)
-
-        #Earlier, references was the script file
         
         if references[0][0] != None:
             import whisper
@@ -504,30 +574,58 @@ def upload():
             print(references)
             print('------------------------------------------------')
             results = sacrebleu.compute(predictions=predictions, references=references)
-            #Gets the clarity percentage
-            score = results['score']
 
             pdf.set_font(family='Arial',style='B',size=h1)
 
-            pdf.multi_cell(txt='Prediction',w=0,h=40)
+            pdf.multi_cell(txt='Your speech',w=0,h=40)
 
-            predictions[0] = unidecode(predictions[0])
+            pdf.set_font(family='Arial',style='B',size=h2)
 
-            pdf.multi_cell(txt=f'{str(predictions)}',w=0,h=40)
+            pdf.multi_cell(txt='What was heard',w=0,h=multicellHeight)
 
-            references[0][0] = unidecode(references[0][0])
-
-            pdf.multi_cell(txt='References',w=0,h=40)
-
-            pdf.multi_cell(txt=f'{str(references)}',w=0,h=40)
+            #Gets the clarity percentage
+            score = results['score']
 
             pdf.set_font(family='Arial',style='B',size=p)
 
             pdf.multi_cell(txt=f'{textSpeech}',w=0,h=40)
 
-            pdf.multi_cell(txt=f'Clarity: {round(score, 2)}%',w=0,h=40)
+            pdf.set_font(family='Arial',style='B',size=h2)
+
+            pdf.multi_cell(txt=f'Clarity: {round(score, 2)}%',w=0,h=multicellHeight)
+
+            pdf.multi_cell(txt='Script feedback',w=0,h=multicellHeight)
+
+            #client = OpenAI
+            
+            if topic is not None and topic != '':
+                topicInfo = f"Also note that the topic of the user's presentation is {topic}."
+            else:
+                topicInfo = ""
+
+            input_messages = [
+                {
+                    'role':'user',
+                    'content':[
+                        {
+                            "type": "input_text",
+                            "text": f"Provided is a user's script for a presentation. Note that there may be grammatical inaccuracies, don't focus on that. Ignore grammar, punctuation in your feedback, some users may be dumb. Focus on just the content. Provide one dot point of positive feedback (if any, be critical), and three dot points of negative feedback. If the speech is empty or insufficient, just reply with a simple message replying to THEM stating how they did not supply a speech. When I say THEM, I  mean that they have sent this speech; they cannot directly respond immediately. Instead of saying 'please provide _____', simply state the reason why you could not do this task. {topicInfo} If the user's spUser's speech: {references[0][0]}"
+                        }
+                    ]
+                }
+            ]
+
+            response = client.responses.create(
+                model='gpt-4o-mini',
+                input=input_messages
+            )
+
+            pdf.set_font(family='Arial',style='B',size=p)
+
+            pdf.multi_cell(txt=f'{unidecode(response.output_text)}',w=0,h=40)
 
             #Remember, all that was just if the user had submitted a script. If not, it is not shown and only the results of their body analysis are returned
+            
 
         pdf.set_font(family='Arial',style='B',size=h1)
 
@@ -601,6 +699,8 @@ def upload():
 
         #Adds all the hand gestures done by the left hand to a list
 
+        print(o_one_positive_intersections_left)
+
         for i in range(len(o_one_positive_intersections_left)):
             if i % 2 == 0:
                 try:
@@ -617,17 +717,21 @@ def upload():
 
         left_gestures = sorted(left_gestures, key=lambda x: x[0])
 
+        print('LEFT GESTURES (unfiltered): ')
+        print(left_gestures)
+
         left_gestures_over_limit = []
 
         #Adds all the left hand gestures done for more than 5 seconds to another list
 
         for gesture in left_gestures:
-            pdf.multi_cell(txt=f'Hand gesture from {gesture[0]} to {gesture[1]}',w=0,h=multicellHeight)
+            pdf.multi_cell(txt=f'Hand gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))}',w=0,h=multicellHeight)
             if int(gesture[1]) - int(gesture[0]) >= 5:
                 left_gestures_over_limit.append(gesture)
 
         for gesture in left_gestures_over_limit:
-            pdf.multi_cell(txt=f'The gesture from {gesture[0]} to {gesture[1]} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
+            pdf.multi_cell(txt=f'{gesture}',w=0,h=multicellHeight)
+            pdf.multi_cell(txt=f'The gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
 
         pdf.set_font(family='Arial',style='B',size=h2)
 
@@ -655,19 +759,24 @@ def upload():
 
         right_gestures = sorted(right_gestures, key=lambda x: x[0])
 
+        print('RIGHT GESTURES')
+        print(right_gestures)
+
         right_gestures_over_limit = []
 
         #Adds all the right hand gestures done for more than 5 seconds to another list
 
         for gesture in right_gestures:
-            pdf.multi_cell(txt=f'Hand gesture from {gesture[0]} to {gesture[1]}',w=0,h=multicellHeight)
+            pdf.multi_cell(txt=f'Hand gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))}',w=0,h=multicellHeight)
             if int(gesture[1]) - int(gesture[0]) >= 5:
                 right_gestures_over_limit.append(gesture)
 
         for gesture in right_gestures_over_limit:
-            pdf.multi_cell(txt=f'The gesture from {gesture[0]} to {gesture[1]} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
+            pdf.multi_cell(txt=f'The gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
 
-        pdf.multi_cell(txt=str(left_wrist_coords),w=0,h=multicellHeight)
+        pdf.multi_cell(txt=f'{maxheightsdividedbyseventwentypluszeropointone}',w=0,h=multicellHeight)
+
+        #pdf.multi_cell(txt=str(left_wrist_coords),w=0,h=multicellHeight)
 
         pdf_bytes = pdf.output(dest='S').encode('latin-1')  # Use latin-1 here
 
@@ -679,7 +788,8 @@ def upload():
         return response
 
     #If the user goes back, they go back to the application!
-    return render_template('upload.html')
+    print(alertMessage)
+    return render_template('upload.html',alert=alertMessage)
 
 if __name__ == "__main__":
     app.run(debug=True)

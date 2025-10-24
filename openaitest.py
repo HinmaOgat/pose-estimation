@@ -9,19 +9,14 @@ def encode_image(image_path):
 
 base64_image = encode_image("./plot.png")
 
-client = OpenAI(api_key = "My Key")
-
+#client = OpenAI(a
 input_messages = [
     {
         'role':'user',
         'content':[
             {
                 "type": "input_text",
-                "text": "This graph shows the positions and movement of two of a user's wrists. Anytime a hand goes drastically up, it means they have started a hand gesture. when their hand goes drastically down, it means they have ended that gesture. give me two lists, one for each hand, with paris of values within denoting the start and end of every gesture done. The gestures should be substantial; eg from frame 21 to 29 is not a gesture, it is just normal hand swaying."
-            },
-            {
-                "type":"input_image",
-                "image_url":f"data:image/jpeg;base64,{base64_image}"
+                "text": '''Provided is a user's speech in a presentation. Note that this was done through speech-to-text, so there may be grammatical inaccuracies, and also it was recorded in one big chunk; ignore grammar, punctuation in your feedback, focus on just the content. Provide one dot point of positive feedback (if any, be critical), and three fot points of negative feedback, returning just those 4 in a row (i.e.  - Feedback   - Feedback etc). Also note that the topic of the user's presentation is Robocup. User's speech:  you you you'''
             }
         ]
     }
