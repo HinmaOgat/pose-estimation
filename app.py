@@ -36,6 +36,7 @@ import datetime
 print(19)
 import sys
 print(20)
+import csv
 
 from openai import OpenAI
 import base64
@@ -43,6 +44,21 @@ from unidecode import unidecode
 
 UPLOAD_FOLDER = './userVideo'
 ALLOWED_EXTENSIONS = {'mp4'}
+
+with open('secretstuff.csv','r',newline='') as csv_file:
+    csv_reader = csv.reader(csv_file)
+    try:
+            first_line = next(csv_reader)  # Read the first line
+            second_line = next(csv_reader) # Read the second line
+    except StopIteration:
+        # Handle cases where the file has fewer than two lines
+        pass
+    
+    secretKey = first_line[1]
+    apiKey = second_line[1]
+
+    print(first_line)
+    print(second_line)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -81,7 +97,7 @@ def encode_image(image_path):
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-#app.secret_key = 
+app.secret_key = secretKey
 
 global alertMessage
 alertMessage = [None,None]
@@ -596,7 +612,7 @@ def upload():
 
             pdf.multi_cell(txt='Script feedback',w=0,h=multicellHeight)
 
-            #client = OpenAI
+            client = OpenAI(api_key = apiKey)
             
             if topic is not None and topic != '':
                 topicInfo = f"Also note that the topic of the user's presentation is {topic}."

@@ -3,6 +3,19 @@ import matplotlib.pyplot as plt
 from shapely.geometry import LineString
 import pandas as pd
 import scipy
+import csv
+
+with open('secretstuff.csv','r',newline='') as csv_file:
+    csv_reader = csv.reader(csv_file)
+    try:
+            first_line = next(csv_reader)  # Read the first line
+            second_line = next(csv_reader) # Read the second line
+    except StopIteration:
+        # Handle cases where the file has fewer than two lines
+        pass
+
+    print(first_line)
+    print(second_line)
 
 def section_y(y_coord,sectionNo):
     for n in range(sectionNo):
