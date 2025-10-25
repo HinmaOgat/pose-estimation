@@ -5,7 +5,7 @@ Please create a csv file called 'secretstuff.csv' in the same directory as app.p
 Secret key, \*\*secret key provided\*\*
 API key, \*\*API key provided\*\*
 
-![alt text]([exampleofsecretstuffcsfile.PNG))
+![alt text](exampleofsecretstuffcsfile.PNG)
 
 ## Which file to run
 Run the __app.py__ file. The rest are either just for testing or model/package files.
