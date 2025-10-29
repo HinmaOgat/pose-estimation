@@ -1,9 +1,11 @@
 # Instructions for use
 
 ## Before running application
-Please create a csv fie called 'secretstuff.csv' in the same directory as app.py. Inside this csv file, in the first and second lines respectively, insert:
+Please create a csv file called 'secretstuff.csv' in the same directory as app.py. Inside this csv file, in the first and second lines respectively, insert:
 Secret key, \*\*secret key provided\*\*
 API key, \*\*API key provided\*\*
+
+![alt text](exampleofsecretstuffcsfile.PNG)
 
 ## Which file to run
 Run the __app.py__ file. The rest are either just for testing or model/package files.
