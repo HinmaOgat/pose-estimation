@@ -208,9 +208,9 @@
         <div class="loginWindow">
             <h2 style="color:black;">Submit your presentation</h2>
             <form method="post" enctype=multipart/form-data>
-            <label for="fileInput"><b>Script file (optional, for speech clarity and feedback):</b></label><input type=file name="scriptFile" class="inputField" style="margin-top:10px; margin-bottom:10px;" id="fileInput"><br>
+            <label for="fileInput"><b>Script file (optional, for speech clarity and feedback):</b></label><input type=file name="scriptFile" class="inputField" style="margin-top:10px; margin-bottom:10px;" id="fileInput" accept=".txt"><br>
             <label for="topicInput"><b>Topic (optional, for speech feedback):</b></label><input type=text name="topic" class="inputField" id="topic" style="height:10px; width:250px; margin-top:10px; margin-bottom:10px;" maxlength="30" placeholder="Enter topic (maximum 10 characters)"><br>
-            <label for="scriptFileInput"><b>Presentation recording file:</b></label><input type=file name=file class="inputField" id="scriptFileInput" style="margin-top:10px; margin-bottom:10px;"><br>
+            <label for="scriptFileInput"><b>Presentation recording file:</b></label><input type=file name=file accept=".mp4" class="inputField" id="scriptFileInput" style="margin-top:10px; margin-bottom:10px;"><br>
             <label for="analysisSpeed"><b>Frame Interval:</b></label>
             <select name="frameInterval" class="inputField" id="frameInterval">
                 <option value=1>1</option>

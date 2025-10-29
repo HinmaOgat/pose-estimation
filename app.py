@@ -43,7 +43,8 @@ import base64
 from unidecode import unidecode
 
 UPLOAD_FOLDER = './userVideo'
-ALLOWED_EXTENSIONS = {'mp4'}
+ALLOWED_EXTENSIONS_VIDEO = {'mp4'}
+ALLOWED_EXTENSIONS_SCRIPT = {'txt'}
 
 with open('secretstuff.csv','r',newline='') as csv_file:
     csv_reader = csv.reader(csv_file)
@@ -60,9 +61,13 @@ with open('secretstuff.csv','r',newline='') as csv_file:
     print(first_line)
     print(second_line)
 
-def allowed_file(filename):
+def allowed_file(filename,allowed):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           filename.rsplit('.', 1)[1].lower() in allowed
+
+def increasingNumber(num):
+    print(num)
+    return num+1
 
 def get_video_duration(file_path):
     ffmpeg_path = get_ffmpeg_exe()
@@ -103,26 +108,41 @@ global alertMessage
 alertMessage = [None,None]
 #Flask stuff
 
+print('Up to app.route')
+print('A')
 @app.route('/', methods=['GET','POST'])
 @app.route('/upload', methods=['GET','POST'])
 def upload():
+    debugNum = 0
+    debugNum = increasingNumber(debugNum)
     alertMessage = session.pop('alertMessage', None)
+    debugNum = increasingNumber(debugNum)
     if request.method == 'POST':
+        debugNum = increasingNumber(debugNum)
         frame_interval = int(request.form.get('frameInterval'))
+        debugNum = increasingNumber(debugNum)
         print(request.form)
+        debugNum = increasingNumber(debugNum)
         topic = request.form.get('topic')
+        debugNum = increasingNumber(debugNum)
         print(f'topic: {topic}')
+        debugNum = increasingNumber(debugNum)
         references = [[None]]
+        debugNum = increasingNumber(debugNum)
         if 'file' not in request.files:
             session['alertMessage'] = ['bad', 'Please upload a VIDEO file']
             return redirect(url_for('upload'))
+        debugNum = increasingNumber(debugNum)
         file = request.files['file']
+        debugNum = increasingNumber(debugNum)
         if file.filename == '':
             session['alertMessage'] = ['bad', 'No file selected']
             return redirect(url_for('upload'))
-        if file and allowed_file(file.filename):
+        debugNum = increasingNumber(debugNum)
+        if file and allowed_file(file.filename,ALLOWED_EXTENSIONS_VIDEO):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        print('Up to scriptFile')
         if 'scriptFile' in request.files:
             #If the user has submitted a script file, it means they want their speech analysed. 
             scriptFile = request.files['scriptFile']
@@ -133,6 +153,7 @@ def upload():
                     scriptFilename = secure_filename(scriptFile.filename)
                     scriptFile.save(os.path.join(app.config['UPLOAD_FOLDER'], scriptFilename))
                     scriptFile = f'userVideo/{scriptFile.filename}'
+                    print("OPENING SCRIPT FILEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
                     with open(scriptFile, 'r',encoding='utf-8') as f:
                         references = [[f.read()]]
                         #references being the script file
@@ -625,7 +646,7 @@ def upload():
                     'content':[
                         {
                             "type": "input_text",
-                            "text": f"Provided is a user's script for a presentation. Note that there may be grammatical inaccuracies, don't focus on that. Ignore grammar, punctuation in your feedback, some users may be dumb. Focus on just the content. Provide one dot point of positive feedback (if any, be critical), and three dot points of negative feedback. If the speech is empty or insufficient, just reply with a simple message replying to THEM stating how they did not supply a speech. When I say THEM, I  mean that they have sent this speech; they cannot directly respond immediately. Instead of saying 'please provide _____', simply state the reason why you could not do this task. {topicInfo} If the user's spUser's speech: {references[0][0]}"
+                            "text": f"Provided is a user's script for a presentation. Note that there may be grammatical inaccuracies, don't focus on that. Ignore grammar, punctuation in your feedback, some users may be dumb, and also it will not be structured, so don't even consider those. Focus on just the content (WORDS). Provide one dot point of positive feedback (if any, be critical), and three dot points of negative feedback. If the speech is empty or insufficient, just reply with a simple message replying to THEM stating how they did not supply a speech. When I say THEM, I  mean that they have sent this speech; they cannot directly respond immediately. Instead of saying 'please provide _____', simply state the reason why you could not do this task. {topicInfo} If the user's spUser's speech: {references[0][0]}"
                         }
                     ]
                 }
