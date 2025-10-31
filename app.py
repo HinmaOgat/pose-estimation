@@ -108,6 +108,13 @@ global alertMessage
 alertMessage = [None,None]
 #Flask stuff
 
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 print('Up to app.route')
 print('A')
 @app.route('/', methods=['GET','POST'])
@@ -152,9 +159,9 @@ def upload():
                 if scriptFile:
                     scriptFilename = secure_filename(scriptFile.filename)
                     scriptFile.save(os.path.join(app.config['UPLOAD_FOLDER'], scriptFilename))
-                    scriptFile = f'userVideo/{scriptFile.filename}'
+                    script_path = os.path.join(app.config['UPLOAD_FOLDER'], scriptFilename)
                     print("OPENING SCRIPT FILEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-                    with open(scriptFile, 'r',encoding='utf-8') as f:
+                    with open(script_path, 'r', encoding='utf-8') as f:
                         references = [[f.read()]]
                         #references being the script file
         video = f'userVideo/{file.filename}'
