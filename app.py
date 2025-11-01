@@ -576,17 +576,23 @@ def upload():
 
         #The following code is for the generation of the PDF file
 
-        title = 25
-        h1 = 20
-        h2 = 15
-        p = 10
-        multicellHeight = 25
+        TITLE_SIZE = 26
+        H1_SIZE = 20
+        H2_SIZE = 16
+        P_SIZE = 12
+        LINE_HEIGHT = 25
+        SMALL_LINE_HEIGHT = 18
+        BOX_PADDING = 5
 
         pdf = FPDF(orientation="P",unit="pt",format="A4")
 
         pdf.add_page()
 
-        pdf.set_font(family='Arial',style='B',size=title)
+        # Title
+        pdf.set_font("Arial", "B", TITLE_SIZE)
+        pdf.set_text_color(30, 30, 30)
+        pdf.multi_cell(0, LINE_HEIGHT, "Presentation Analysis Report", align="C")
+        pdf.ln(15)
         
         if references[0][0] != None:
             import whisper
@@ -616,28 +622,26 @@ def upload():
             print('------------------------------------------------')
             results = sacrebleu.compute(predictions=predictions, references=references)
 
-            pdf.set_font(family='Arial',style='B',size=h1)
+            pdf.set_fill_color(220, 235, 252)  # Light blue box
+            pdf.set_font("Arial", "B", H1_SIZE)
+            pdf.multi_cell(0, LINE_HEIGHT, "Your Speech")
+            pdf.set_draw_color(200, 200, 200)
+            pdf.line(50, pdf.get_y(), 545, pdf.get_y())  # Horizontal divider
+            pdf.ln(10)
 
-            pdf.multi_cell(txt='_______________________________________________',w=0,h=40)
-
-            pdf.multi_cell(txt='Your speech',w=0,h=40)
-
-            pdf.set_font(family='Arial',style='B',size=h2)
-
-            pdf.multi_cell(txt='What was heard',w=0,h=multicellHeight)
+            pdf.set_font("Arial", "", P_SIZE)
 
             #Gets the clarity percentage
             score = results['score']
 
-            pdf.set_font(family='Arial',style='B',size=p)
+            pdf.multi_cell(0, LINE_HEIGHT, f"{textSpeech}", fill=True)
 
-            pdf.multi_cell(txt=f'{textSpeech}',w=0,h=40)
-
-            pdf.set_font(family='Arial',style='B',size=h2)
-
-            pdf.multi_cell(txt=f'Clarity: {round(score, 2)}%',w=0,h=multicellHeight)
-
-            pdf.multi_cell(txt='Script feedback',w=0,h=multicellHeight)
+            # Section: Key Metrics Box (Clarity)
+            pdf.set_font("Arial", "B", H2_SIZE)
+            pdf.set_text_color(0, 0, 0)
+            pdf.multi_cell(0, LINE_HEIGHT + BOX_PADDING, f"Clarity", fill=True)
+            pdf.set_font("Arial", "B", P_SIZE)
+            pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"{round(19,2)}%", fill=True)
 
             client = OpenAI(api_key = apiKey)
             
@@ -663,31 +667,29 @@ def upload():
                 input=input_messages
             )
 
-            pdf.set_font(family='Arial',style='B',size=p)
-
-            pdf.multi_cell(txt=f'{unidecode(response.output_text)}',w=0,h=40)
+            # Section: Script Feedback
+            pdf.set_font("Arial", "B", H2_SIZE)
+            pdf.multi_cell(0, LINE_HEIGHT, "Script Feedback", fill=True)
+            pdf.set_font("Arial", "", P_SIZE)
+            pdf.multi_cell(0, LINE_HEIGHT, f'{unidecode(response.output_text)}', fill=True)  # Replace with actual feedback
+            pdf.ln(10)
 
             #Remember, all that was just if the user had submitted a script. If not, it is not shown and only the results of their body analysis are returned
             
-        pdf.set_font(family='Arial',style='B',size=h1)
+        # Section: Space Usage
+        pdf.set_font("Arial", "B", H1_SIZE)
+        pdf.multi_cell(0, LINE_HEIGHT, "Space Usage")
+        pdf.line(50, pdf.get_y(), 545, pdf.get_y())
+        pdf.ln(10)
 
-        pdf.multi_cell(txt='_______________________________________________',w=0,h=40)
+        pdf.set_font("Arial", "", P_SIZE)
+        pdf.set_fill_color(240, 240, 240)  # Light gray for stats box
 
-        pdf.set_font(family='Arial',style='B',size=h1)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"Space utilised: {spaceUtilized}",fill=True)
 
-        pdf.multi_cell(txt='Space usage',w=0,h=40)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"Left-most position at {datetime.timedelta(seconds=round(min_frame/fps,0))} (hours:minutes:seconds)",fill=True)
 
-        pdf.set_font(family='Arial',style='B',size=p)
-
-        pdf.multi_cell(txt=f'Space utilised: {spaceUtilized}',w=0,h=multicellHeight)
-
-        pdf.multi_cell(txt=f'Left-most position at {datetime.timedelta(seconds=round(min_frame/fps,0))} (hours:minutes:seconds)',w=0,h=multicellHeight)
-
-        pdf.image('min_frame.jpg',w=160,h=90)
-
-        pdf.multi_cell(txt=f'Right-most position at {datetime.timedelta(seconds=round(max_frame/fps,0))} (hours:minutes:seconds)',w=0,h=multicellHeight)
-
-        pdf.image('max_frame.jpg',w=160,h=90)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"Right-most position at {datetime.timedelta(seconds=round(max_frame/fps,0))} (hours:minutes:seconds)",fill=True)
 
         #The following code returns how much of the time they spent in the 'center' of the stage; that is, the middle 60% (sections 2,3 and 4)
         sectionOne = 0
@@ -713,27 +715,29 @@ def upload():
         sectionFour = sectionFour/len(sections)*100
         sectionFive = sectionFive/len(sections)*100
 
-        pdf.set_font(family='Arial',style='B',size=p)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"You were in the corners of the screen for {sectionOne+sectionFive}% of the presentation.",fill=True)
+        
+        # Images with captions
+        pdf.image('min_frame.jpg', w=160, h=90)
+        pdf.set_font("Arial", "I", P_SIZE - 2)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 1: Left-most frame position",fill=True)
 
-        pdf.multi_cell(txt=f'You were in the corners of the screen for {sectionOne+sectionFive}% of the presentation.',w=0,h=multicellHeight)
+        pdf.image('max_frame.jpg', w=160, h=90)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 2: Right-most frame position",fill=True)
+        pdf.ln(10)
 
-        #pdf.multi_cell(txt='Graph of sections',w=0,h=multicellHeight)
+        pdf.set_fill_color(220, 235, 252)  # Light blue box
+        pdf.set_font("Arial", "B", H1_SIZE)
+        pdf.multi_cell(0, LINE_HEIGHT, "Hand Gestures")
+        pdf.line(50, pdf.get_y(), 545, pdf.get_y())
+        pdf.ln(10)
 
-        #pdf.image('plot3.png',w=280,h=210)
-
-        pdf.set_font(family='Arial',style='B',size=h1)
-
-        pdf.multi_cell(txt='_______________________________________________',w=0,h=40)
-
-        pdf.set_font(family='Arial',style='B',size=h1)
-
-        pdf.multi_cell(txt='Hand gestures',w=0,h=40)
-
-        pdf.set_font(family='Arial',style='B',size=h2)
-
-        pdf.multi_cell(txt='Graph of wrist positions ',w=0,h=multicellHeight)
-
-        pdf.image('plot.png',w=280,h=210)
+        # Wrist Positions Graph
+        pdf.set_font("Arial", "B", H2_SIZE)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Graph of Wrist Positions",fill=True)
+        pdf.image('plot.png', w=280, h=210)
+        pdf.set_font("Arial", "I", P_SIZE - 2)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 3: Wrist positions over time",fill=True)
 
         #pdf.set_font(family='Arial',style='B',size=h2)
 
@@ -743,9 +747,9 @@ def upload():
 
         left_gestures = []
 
-        pdf.multi_cell(txt='Left hand',w=0,h=multicellHeight)
-
-        pdf.set_font(family='Arial',style='B',size=p)
+        pdf.set_font("Arial", "B", H2_SIZE)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT+BOX_PADDING, "Left Hand Gestures (Over Limit)",fill=True)
+        pdf.set_font("Arial", "", P_SIZE)
 
         #Adds all the hand gestures done by the left hand to a list
 
@@ -778,18 +782,18 @@ def upload():
             #pdf.multi_cell(txt=f'Hand gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))}',w=0,h=multicellHeight)
             if int(gesture[1]) - int(gesture[0]) >= 5:
                 left_gestures_over_limit.append(gesture)
+        if len(left_gestures_over_limit) != 0:
+            for gesture in left_gestures_over_limit:
+                #pdf.multi_cell(txt=f'{gesture}',w=0,h=multicellHeight)
+                pdf.multi_cell(0, SMALL_LINE_HEIGHT+BOX_PADDING, f"The gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))} exceeded the 5-second recommended time frame",fill=True)
+        else:
+            pdf.multi_cell(0, SMALL_LINE_HEIGHT+BOX_PADDING, f"No left hand gestures exceeding the 5-second recommended time frame detected. Yay!",fill=True)
 
-        for gesture in left_gestures_over_limit:
-            #pdf.multi_cell(txt=f'{gesture}',w=0,h=multicellHeight)
-            pdf.multi_cell(txt=f'The gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
-
-        pdf.set_font(family='Arial',style='B',size=h2)
+        pdf.set_font("Arial", "B", H2_SIZE)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT+BOX_PADDING, "Right Hand Gestures (Over Limit)",fill=True)
+        pdf.set_font("Arial", "", P_SIZE)
 
         right_gestures = []
-
-        pdf.multi_cell(txt='Right hand',w=0,h=multicellHeight)
-
-        pdf.set_font(family='Arial',style='B',size=p)
 
         #Adds all the hand gestures done by the right hand to a list
 
@@ -820,10 +824,14 @@ def upload():
             #pdf.multi_cell(txt=f'Hand gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))}',w=0,h=multicellHeight)
             if int(gesture[1]) - int(gesture[0]) >= 5:
                 right_gestures_over_limit.append(gesture)
+        if len(right_gestures_over_limit) != 0:
+            for gesture in right_gestures_over_limit:
+                pdf.multi_cell(0, SMALL_LINE_HEIGHT+BOX_PADDING, f"The gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))} exceeded the 5-second recommended amount",fill=True)
+        else:
+            pdf.multi_cell(0, SMALL_LINE_HEIGHT+BOX_PADDING, f"No right hand gestures exceeding the 5-second recommended time frame detected. Yay!",fill=True)
 
-        for gesture in right_gestures_over_limit:
-            pdf.multi_cell(txt=f'The gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
-
+        pdf.ln(10)
+        
         #pdf.multi_cell(txt=f'{maxheightsdividedbyseventwentypluszeropointone}',w=0,h=multicellHeight)
 
         #pdf.multi_cell(txt=str(left_wrist_coords),w=0,h=multicellHeight)
