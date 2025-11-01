@@ -141,7 +141,7 @@
         animation: spin 2s linear infinite;
         position: absolute;
         position: fixed; /* fixed keeps it in view regardless of scroll */
-    top: 35%;
+    top: 40%;
     left: 45%;
     transform: translate(-50%, -50%); /* center it */
     z-index: 9999; /* ensure it's in front of all other elements */
@@ -170,6 +170,7 @@
             document.getElementById('cancel').style.display = 'inline';
         }
         function changeLoadingText(){
+            console.log('jh')
             const messages = ['Analyzing your awesome presentation...',
             'Integrating algorithms...',
             'Doing cool YOLO stuff...',
@@ -190,6 +191,8 @@
             "What if I'm the human and you're the software?"
         ]
             document.getElementById('loadingText').textContent = messages[Math.floor(Math.random() * messages.length)];
+            console.log(Math.round(document.getElementById('loadingText').offsetHeight/47));
+            document.getElementById('spinmerightround').style.top = `${40+(document.getElementById('loadingText').offsetHeight/47-1)*5}%`
         }
         function sayHi(){
             document.getElementById('loader-overlay').style.display='block';
@@ -232,8 +235,8 @@
         <br>
         <br>
         <br>
-        <h1 id="loadingText" style="text-align: center; background-color: whitesmoke; width: 50%; margin: auto; border-radius: 10px; border-bottom:2px solid lime;">Loading...</h1>
-        <div class="loader"></div>
+        <h1 id="loadingText" style="text-align: center; background-color: whitesmoke; width: 50%; margin: auto; margin-bottom: 50px; border-radius: 10px; border-bottom:2px solid lime; font-size: 40px;" onclick="changeLoadingText()">Loading...</h1>
+        <div class="loader" id="spinmerightround"></div>
     </div>
 </body>
 </html>

@@ -157,13 +157,10 @@ def upload():
                 references = [[None]]
             else:
                 if scriptFile:
-                    scriptFilename = secure_filename(scriptFile.filename)
-                    scriptFile.save(os.path.join(app.config['UPLOAD_FOLDER'], scriptFilename))
-                    script_path = os.path.join(app.config['UPLOAD_FOLDER'], scriptFilename)
-                    print("OPENING SCRIPT FILEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-                    with open(script_path, 'r', encoding='utf-8') as f:
-                        references = [[f.read()]]
-                        #references being the script file
+                    references = [[scriptFile.read().decode('utf-8')]]  # Decode for text content
+                else:
+                    references = [[None]]
+
         video = f'userVideo/{file.filename}'
         import cv2
         left_wrist_coords = []
@@ -621,6 +618,8 @@ def upload():
 
             pdf.set_font(family='Arial',style='B',size=h1)
 
+            pdf.multi_cell(txt='_______________________________________________',w=0,h=40)
+
             pdf.multi_cell(txt='Your speech',w=0,h=40)
 
             pdf.set_font(family='Arial',style='B',size=h2)
@@ -653,7 +652,7 @@ def upload():
                     'content':[
                         {
                             "type": "input_text",
-                            "text": f"Provided is a user's script for a presentation. Note that there may be grammatical inaccuracies, don't focus on that. Ignore grammar, punctuation in your feedback, some users may be dumb, and also it will not be structured, so don't even consider those. Focus on just the content (WORDS). Provide one dot point of positive feedback (if any, be critical), and three dot points of negative feedback. If the speech is empty or insufficient, just reply with a simple message replying to THEM stating how they did not supply a speech. When I say THEM, I  mean that they have sent this speech; they cannot directly respond immediately. Instead of saying 'please provide _____', simply state the reason why you could not do this task. {topicInfo} If the user's spUser's speech: {references[0][0]}"
+                            "text": f"Provided is a user's script for a presentation. Note that there may be grammatical inaccuracies, don't focus on that. Ignore grammar, punctuation in your feedback, some users may be dumb, and also it will not be structured, so don't even consider those. Focus on just the content (WORDS). Provide one dot point of positive feedback (if any, be critical), and three dot points of negative feedback. If the speech is empty or insufficient, just reply with a simple message replying to THEM stating how they did not supply a speech. When I say THEM, I  mean that they have sent this speech; they cannot directly respond immediately. Instead of saying 'please provide _____', simply state the reason why you could not do this task. {topicInfo} User's speech: {references[0][0]}"
                         }
                     ]
                 }
@@ -670,6 +669,9 @@ def upload():
 
             #Remember, all that was just if the user had submitted a script. If not, it is not shown and only the results of their body analysis are returned
             
+        pdf.set_font(family='Arial',style='B',size=h1)
+
+        pdf.multi_cell(txt='_______________________________________________',w=0,h=40)
 
         pdf.set_font(family='Arial',style='B',size=h1)
 
@@ -715,9 +717,13 @@ def upload():
 
         pdf.multi_cell(txt=f'You were in the corners of the screen for {sectionOne+sectionFive}% of the presentation.',w=0,h=multicellHeight)
 
-        pdf.multi_cell(txt='Graph of sections',w=0,h=multicellHeight)
+        #pdf.multi_cell(txt='Graph of sections',w=0,h=multicellHeight)
 
-        pdf.image('plot3.png',w=280,h=210)
+        #pdf.image('plot3.png',w=280,h=210)
+
+        pdf.set_font(family='Arial',style='B',size=h1)
+
+        pdf.multi_cell(txt='_______________________________________________',w=0,h=40)
 
         pdf.set_font(family='Arial',style='B',size=h1)
 
@@ -729,11 +735,11 @@ def upload():
 
         pdf.image('plot.png',w=280,h=210)
 
-        pdf.set_font(family='Arial',style='B',size=h2)
+        #pdf.set_font(family='Arial',style='B',size=h2)
 
-        pdf.multi_cell(txt='Graph of wrist sections',w=0,h=multicellHeight)
+        #pdf.multi_cell(txt='Graph of wrist sections',w=0,h=multicellHeight)
 
-        pdf.image('plot2.png',w=280,h=210)
+        #pdf.image('plot2.png',w=280,h=210)
 
         left_gestures = []
 
@@ -769,12 +775,12 @@ def upload():
         #Adds all the left hand gestures done for more than 5 seconds to another list
 
         for gesture in left_gestures:
-            pdf.multi_cell(txt=f'Hand gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))}',w=0,h=multicellHeight)
+            #pdf.multi_cell(txt=f'Hand gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))}',w=0,h=multicellHeight)
             if int(gesture[1]) - int(gesture[0]) >= 5:
                 left_gestures_over_limit.append(gesture)
 
         for gesture in left_gestures_over_limit:
-            pdf.multi_cell(txt=f'{gesture}',w=0,h=multicellHeight)
+            #pdf.multi_cell(txt=f'{gesture}',w=0,h=multicellHeight)
             pdf.multi_cell(txt=f'The gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
 
         pdf.set_font(family='Arial',style='B',size=h2)
@@ -811,14 +817,14 @@ def upload():
         #Adds all the right hand gestures done for more than 5 seconds to another list
 
         for gesture in right_gestures:
-            pdf.multi_cell(txt=f'Hand gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))}',w=0,h=multicellHeight)
+            #pdf.multi_cell(txt=f'Hand gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))}',w=0,h=multicellHeight)
             if int(gesture[1]) - int(gesture[0]) >= 5:
                 right_gestures_over_limit.append(gesture)
 
         for gesture in right_gestures_over_limit:
             pdf.multi_cell(txt=f'The gesture from {str(datetime.timedelta(seconds=round(float(gesture[0]))))} to {str(datetime.timedelta(seconds=round(float(gesture[1]))))} exceeded the 5-second recommended amount',w=0,h=multicellHeight)
 
-        pdf.multi_cell(txt=f'{maxheightsdividedbyseventwentypluszeropointone}',w=0,h=multicellHeight)
+        #pdf.multi_cell(txt=f'{maxheightsdividedbyseventwentypluszeropointone}',w=0,h=multicellHeight)
 
         #pdf.multi_cell(txt=str(left_wrist_coords),w=0,h=multicellHeight)
 
