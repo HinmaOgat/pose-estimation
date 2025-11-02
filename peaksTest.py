@@ -38,37 +38,39 @@ def upload():
     # Section: Your Speech
     pdf.set_fill_color(220, 235, 252)  # Light blue box
     pdf.set_font("Arial", "B", H1_SIZE)
-    pdf.multi_cell(0, LINE_HEIGHT, "Your Speech")
+    pdf.multi_cell(0, LINE_HEIGHT, "Your Speech", fill=True)
     pdf.set_draw_color(200, 200, 200)
     pdf.line(50, pdf.get_y(), 545, pdf.get_y())  # Horizontal divider
     pdf.ln(10)
 
     pdf.set_font("Arial", "", P_SIZE)
-    pdf.multi_cell(0, LINE_HEIGHT, "HELLO! My name is Bob and I am a person!!!1!!!1!!", fill=True)
+    pdf.multi_cell(0, LINE_HEIGHT, "HELLO! My name is Bob and I am a person!!!1!!!1!!")#, fill=True)
     #pdf.ln(10)
 
     # Section: Key Metrics Box (Clarity)
     pdf.set_font("Arial", "B", H2_SIZE)
     pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, LINE_HEIGHT + BOX_PADDING, f"Clarity", fill=True)
+    pdf.multi_cell(0, LINE_HEIGHT + BOX_PADDING, f"Clarity")#, fill=True)
     pdf.set_font("Arial", "B", P_SIZE)
-    pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"{round(19,2)}%", fill=True)
+    pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"{round(19,2)}%")#, fill=True)
+    pdf.set_font("Arial", "I", P_SIZE - 2)
+    pdf.multi_cell(0, SMALL_LINE_HEIGHT, f"This means of the detected words from your speech, {round(19,2)}% matched the provided script")#,fill=True)
 
     # Section: Script Feedback
     pdf.set_font("Arial", "B", H2_SIZE)
-    pdf.multi_cell(0, LINE_HEIGHT, "Script Feedback", fill=True)
+    pdf.multi_cell(0, LINE_HEIGHT, "Script Feedback")#, fill=True)
     pdf.set_font("Arial", "", P_SIZE)
-    pdf.multi_cell(0, LINE_HEIGHT, "This is ASS", fill=True)  # Replace with actual feedback
+    pdf.multi_cell(0, LINE_HEIGHT, "This is ASS")#, fill=True)  # Replace with actual feedback
     pdf.ln(10)
 
     # Section: Space Usage
+    pdf.set_fill_color(240, 240, 240)  # Light gray for stats box
     pdf.set_font("Arial", "B", H1_SIZE)
-    pdf.multi_cell(0, LINE_HEIGHT, "Space Usage")
+    pdf.multi_cell(0, LINE_HEIGHT, "Space Usage", fill=True)
     pdf.line(50, pdf.get_y(), 545, pdf.get_y())
     pdf.ln(10)
 
     pdf.set_font("Arial", "", P_SIZE)
-    pdf.set_fill_color(240, 240, 240)  # Light gray for stats box
     stats = [
         ("Space Utilised", "-1%"),
         ("Left-most position", "00:00:01"),
@@ -76,30 +78,30 @@ def upload():
         ("Time in corners", "4%")
     ]
     for stat, value in stats:
-        pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"{stat}: {value}",fill=True)
+        pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"{stat}: {value}")#,fill=True)
 
     # Images with captions
     pdf.image('min_frame.jpg', w=160, h=90)
     pdf.set_font("Arial", "I", P_SIZE - 2)
-    pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 1: Left-most frame position",fill=True)
+    pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 1: Left-most frame position")#,fill=True)
 
     pdf.image('max_frame.jpg', w=160, h=90)
-    pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 2: Right-most frame position",fill=True)
+    pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 2: Right-most frame position")#,fill=True)
     pdf.ln(10)
 
     # Section: Hand Gestures
     pdf.set_fill_color(220, 235, 252)  # Light blue box
     pdf.set_font("Arial", "B", H1_SIZE)
-    pdf.multi_cell(0, LINE_HEIGHT, "Hand Gestures")
+    pdf.multi_cell(0, LINE_HEIGHT, "Hand Gestures", fill=True)
     pdf.line(50, pdf.get_y(), 545, pdf.get_y())
     pdf.ln(10)
 
     # Wrist Positions Graph
     pdf.set_font("Arial", "B", H2_SIZE)
-    pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Graph of Wrist Positions",fill=True)
+    pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Graph of Wrist Positions")#,fill=True)
     pdf.image('plot.png', w=280, h=210)
     pdf.set_font("Arial", "I", P_SIZE - 2)
-    pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 3: Wrist positions over time",fill=True)
+    pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 3: Wrist positions over time")#,fill=True)
 
     pdf.set_font("Arial", "B", H2_SIZE)
     pdf.multi_cell(0, SMALL_LINE_HEIGHT+BOX_PADDING, "Left Hand Gestures (Over Limit)")
