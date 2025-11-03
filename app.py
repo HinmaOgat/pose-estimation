@@ -594,6 +594,16 @@ try:
 
             pdf.add_page()
 
+            pdf.set_text_color(255,0,0)
+            pdf.set_fill_color(255,0,0)
+            pdf.set_draw_color(255,0,0)
+            pdf.line(50, pdf.get_y(), 545, pdf.get_y())
+            pdf.set_font("Arial", "", P_SIZE)
+            pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"DO NOT PRESS BACK. End the application and restart to analyse another presentation")
+            pdf.line(50, pdf.get_y(), 545, pdf.get_y()) 
+            pdf.ln(15)
+            pdf.set_draw_color(255,255,255)
+
             # Title
             pdf.set_font("Arial", "B", TITLE_SIZE)
             pdf.set_text_color(30, 30, 30)
