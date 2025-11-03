@@ -29,7 +29,6 @@ from imageio_ffmpeg import get_ffmpeg_exe
 print(14)
 import re
 print(15)
-
 import string
 print(18)
 import datetime
@@ -41,6 +40,8 @@ import csv
 from openai import OpenAI
 import base64
 from unidecode import unidecode
+
+#End of imports
 
 UPLOAD_FOLDER = './userVideo'
 ALLOWED_EXTENSIONS_VIDEO = {'mp4'}
@@ -61,15 +62,15 @@ with open('secretstuff.csv','r',newline='') as csv_file:
     print(first_line)
     print(second_line)
 
-def allowed_file(filename,allowed):
+def allowed_file(filename,allowed): #allowed file checker
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowed
 
-def increasingNumber(num):
+def increasingNumber(num): #for debugging
     print(num)
     return num+1
 
-def get_video_duration(file_path):
+def get_video_duration(file_path): #Gets video duration
     ffmpeg_path = get_ffmpeg_exe()
     
     result = subprocess.run(
@@ -87,7 +88,7 @@ def get_video_duration(file_path):
     duration = hours * 3600 + minutes * 60 + seconds
     return duration
 
-def section_x(x_coord,sectionNo):
+def section_x(x_coord,sectionNo): #for dividing screen in to horizontal sections
     for n in range(sectionNo):
         if n == 0:
             if x_coord >= 0 and x_coord <= (1280/sectionNo)*(n+1):
@@ -96,7 +97,7 @@ def section_x(x_coord,sectionNo):
             if x_coord > (1280/sectionNo)*n and x_coord <= (1280/sectionNo)*(n+1):
                 return n+1
 
-def encode_image(image_path):
+def encode_image(image_path): #Encodes image
     with open(image_path,'rb') as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
@@ -127,7 +128,7 @@ try:
     @app.route('/upload', methods=['GET','POST'])
     def upload():
         debugNum = 0
-        debugNum = increasingNumber(debugNum)
+        debugNum = increasingNumber(debugNum)# <-- This line, repeated a bunch, was for debugging
         alertMessage = session.pop('alertMessage', None)
         debugNum = increasingNumber(debugNum)
         if request.method == 'POST':
@@ -156,7 +157,7 @@ try:
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             print('Up to scriptFile')
-            if 'scriptFile' in request.files:
+            if 'scriptFile' in request.files: #For the script (if the user enters one)
                 scriptFile = request.files['scriptFile']
                 if scriptFile and scriptFile.filename != '':
                     script_filename = secure_filename(scriptFile.filename)
@@ -183,7 +184,7 @@ try:
             min_frame = None
             max_frame = None
 
-            model = YOLO('yolov8n-pose')
+            model = YOLO('yolov8n-pose') #Gets the pose detection model
 
             start_time = time.time()
 
@@ -191,17 +192,17 @@ try:
             frame_number = 0
             if not cap.isOpened():
                 exit()
-            while True:
+            while True: #Goes through each frame
                 ret, frame = cap.read()
                 if not ret:
                     break
                 try:
-                    if frame_number % frame_interval == 0:
+                    if frame_number % frame_interval == 0: #Only analyses nth frame, depending on frame interval
                         height, width = frame.shape[:2]
                         #print(f"HEIGHTTTTT: {height}")
                         part_height = height // 9
 
-                        if frame_number != 0:
+                        if frame_number != 0: #In the first frame, the rest areas are established, for all other frames they are displayed
                             pass
                             cv2.line(frame, (0, round(rest_Top_Left*720*-1)), (width, round(rest_Top_Left*720*-1)), (0, 255, 0), 2)
                             cv2.line(frame, (0, round(rest_Bottom_Left*720*-1)), (width, round(rest_Bottom_Left*720*-1)), (0, 255, 0), 2)
@@ -214,7 +215,7 @@ try:
                         #Confirm which human on the screen is a presenter (whichever has the greatest height)
                         xyxyboxes = result.boxes.xyxy.tolist()
                         heights = []
-                        for xyxybox in xyxyboxes:
+                        for xyxybox in xyxyboxes: 
                             heights.append(xyxybox[3]-xyxybox[1])
                         presenterIndex = heights.index(max(heights))
                         print(f'max(heights): {max(heights)}')
@@ -661,7 +662,6 @@ try:
                     pdf.set_font("Arial", "", P_SIZE)
                     pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"'{textSpeech}'")
 
-                # Section: Key Metrics Box (Clarity)
                 pdf.set_font("Arial", "B", H2_SIZE)
                 pdf.set_text_color(0, 0, 0)
                 pdf.multi_cell(0, LINE_HEIGHT + BOX_PADDING, f"Clarity")
@@ -670,9 +670,9 @@ try:
                 pdf.set_font("Arial", "I", P_SIZE - 2)
                 pdf.multi_cell(0, SMALL_LINE_HEIGHT, f"*This means of the detected words from your speech, {round(score,2)}% matched the provided script")#,fill=True)
                 
-                client = OpenAI(api_key = apiKey)
+                client = OpenAI(api_key = apiKey)  #Gets the OpenAI client
                 
-                if topic is not None and topic != '':
+                if topic is not None and topic != '': #If the user supplied a topic
                     topicInfo = f"Also note that the topic of the user's presentation is {topic}."
                 else:
                     topicInfo = ""
