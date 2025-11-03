@@ -682,29 +682,27 @@ try:
                         'role':'user',
                         'content':[
                             {
-                                "type": "input_text",
+                                "type": "input_text", #The lengthy prompt below essentially asks for feedback on the user's provided script, giving it context such as 'no structure', etc
                                 "text": f"Provided is a user's script for a presentation. Note that there may be grammatical inaccuracies, don't focus on that. Ignore grammar, punctuation in your feedback, some users may be dumb. Also it will not be structured; whateevr the user's script was was compressed into one paragraph, so don't , so don't even consider those. Focus on just the content (WORDS). Provide AT LEAST one dot point of positive feedback (if any, be critical), and AT LEAST one dot points of negative feedback. If the speech is empty or insufficient, just reply with a simple message replying to THEM stating how they did not supply a speech. When I say THEM, I mean that they have sent this speech to me to be passed onto you; they cannot directly respond immediately. Instead of saying 'please provide _____', simply state the reason why you could not do this task. {topicInfo} User's speech: {references[0][0]}"
                             }
                         ]
                     }
                 ]
 
-                response = client.responses.create(
+                response = client.responses.create( #Generates the response
                     model='gpt-4o-mini',
                     input=input_messages
                 )
 
-                # Section: Script Feedback
                 pdf.set_font("Arial", "B", H2_SIZE)
                 pdf.multi_cell(0, LINE_HEIGHT, "Script Feedback")
                 pdf.set_font("Arial", "", P_SIZE)
-                pdf.multi_cell(0, LINE_HEIGHT, f'{unidecode(response.output_text)}')  # Replace with actual feedback
+                pdf.multi_cell(0, LINE_HEIGHT, f'{unidecode(response.output_text)}') 
                 pdf.add_page()
 
                 #Remember, all that was just if the user had submitted a script. If not, it is not shown and only the results of their body analysis are returned
                 
-            # Section: Space Usage
-            pdf.set_fill_color(240, 240, 240)  # Light gray for stats box
+            pdf.set_fill_color(240, 240, 240) 
             pdf.set_font("Arial", "B", H1_SIZE)
             pdf.multi_cell(0, LINE_HEIGHT, "Space Usage", fill=True)
             pdf.line(50, pdf.get_y(), 545, pdf.get_y())
@@ -743,7 +741,6 @@ try:
 
             pdf.multi_cell(0, SMALL_LINE_HEIGHT + BOX_PADDING, f"You were in the corners of the screen for {sectionOne+sectionFive}% of the presentation.")
             
-            # Images with captions
             pdf.image('min_frame.jpg', w=160, h=90)
             pdf.set_font("Arial", "I", P_SIZE - 2)
             pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 1: Left-most frame position")
@@ -752,13 +749,12 @@ try:
             pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Figure 2: Right-most frame position")
             pdf.add_page()
 
-            pdf.set_fill_color(220, 235, 252)  # Light blue box
+            pdf.set_fill_color(220, 235, 252)  
             pdf.set_font("Arial", "B", H1_SIZE)
             pdf.multi_cell(0, LINE_HEIGHT, "Hand Gestures", fill=True)
             pdf.line(50, pdf.get_y(), 545, pdf.get_y())
             pdf.ln(10)
 
-            # Wrist Positions Graph
             pdf.set_font("Arial", "B", H2_SIZE)
             pdf.multi_cell(0, SMALL_LINE_HEIGHT, "Graph of Wrist Positions")
             pdf.image('plot.png', w=280, h=210)
